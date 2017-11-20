@@ -22,6 +22,14 @@ void TcpSocket::doConnect()
     {
         throw int(-1); // TODO odpowiedni wyjatek
     }
+    sockaddr_in addr =
+            {.sin_family = AF_INET, .sin_port = htons(portNumber)};
+    addr.sin_addr.s_addr = inet_addr(ipNumber.c_str());
+    int result = connect(sock, reinterpret_cast<sockaddr *>(&addr), sizeof addr);
+    if(result == -1)
+    {
+        throw int(-1); // TODO wyjatek
+    }
 }
 
 
@@ -30,7 +38,7 @@ bool TcpSocket::isConnected()
     return connectionEstablished;
 }
 
-void TcpSocket::close()
+void TcpSocket::closeSocket()
 {
     if(!connectionEstablished)
     {
@@ -38,3 +46,9 @@ void TcpSocket::close()
     }
     close(sock);
 }
+
+void TcpSocket::recieveData()
+{// TODO}
+
+void TcpSocket::sendData()
+{// TODO}

@@ -5,21 +5,22 @@
 #ifndef DROPBOX_TCPSOCKET_H
 #define DROPBOX_TCPSOCKET_H
 
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
-#include <unistd.h>
 
+using namespace std;
 class TcpSocket
 {
-    using namespace std;
 public:
     TcpSocket(string ip, unsigned short port);
     void doConnect();
     bool isConnected();
-    void close();
-    bool isConnected();
+    void closeSocket();
+    void recieveData();
+    void sendData();
 
 private:
     bool connectionEstablished;
