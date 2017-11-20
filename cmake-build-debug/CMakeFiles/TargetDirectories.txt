@@ -1,3 +1,0 @@
-/home/ns/Documents/semestr5/SK2/Dropbox/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/ns/Documents/semestr5/SK2/Dropbox/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/ns/Documents/semestr5/SK2/Dropbox/cmake-build-debug/CMakeFiles/Dropbox.dir
