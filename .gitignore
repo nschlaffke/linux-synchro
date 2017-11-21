@@ -6,6 +6,7 @@
  .idea/**/workspace.xml
  .idea/**/tasks.xml
  .idea/dictionaries
+ .idea/*
  .idea
  cmake-build-debug/
 
@@ -91,3 +92,4 @@ CTestTestfile.cmake
 *.exe
 *.out
 *.app
+.idea/
