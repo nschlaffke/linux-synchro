@@ -2,36 +2,34 @@
 // Created by ns on 20.11.17.
 //
 
+#include <iostream>
 #include "TcpSocket.h"
 
-
-TcpSocket::TcpSocket(string ip, unsigned short port) : ipNumber(ip), portNumber(port)
+TcpSocket::TcpSocket(string ip, unsigned short port) : ipAddress(ip), portNumber(port), connectionEstablished(false)
 {
     sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if(sock == -1)
+    if (sock == -1)
     {
-        throw int(-1); // TODO dorobic wyjatek TcpSocketException
+        throw CreationFailure();
     }
-
 }
-
 
 void TcpSocket::doConnect()
 {
-    if(connectionEstablished)
+    if (connectionEstablished)
     {
-        throw int(-1); // TODO odpowiedni wyjatek
+        throw WrongState();
     }
     sockaddr_in addr =
             {.sin_family = AF_INET, .sin_port = htons(portNumber)};
-    addr.sin_addr.s_addr = inet_addr(ipNumber.c_str());
+    addr.sin_addr.s_addr = inet_addr(ipAddress.c_str());
     int result = connect(sock, reinterpret_cast<sockaddr *>(&addr), sizeof addr);
-    if(result == -1)
+    if (result == -1)
     {
-        throw int(-1); // TODO wyjatek
+        throw ConnectionFailure();
     }
+    connectionEstablished = true;
 }
-
 
 bool TcpSocket::isConnected()
 {
@@ -40,15 +38,41 @@ bool TcpSocket::isConnected()
 
 void TcpSocket::closeSocket()
 {
-    if(!connectionEstablished)
+    if (!connectionEstablished)
     {
-        throw int(-1); // TODO wyjatek
+        throw WrongState();
     }
     close(sock);
 }
 
-void TcpSocket::recieveData()
-{// TODO}
+size_t TcpSocket::recieveData(byte buffer[], size_t bufferSize)
+{
+    if (!connectionEstablished)
+    {
+        throw WrongState();
+    }
+    ssize_t result = read(sock, buffer, bufferSize);
 
-void TcpSocket::sendData()
-{// TODO}
+    if (result == -1)
+    {
+        throw ReadFailure();
+    }
+    else
+        return static_cast<size_t>(result);
+}
+
+size_t TcpSocket::sendData(const byte data[], size_t size)
+{
+    ssize_t result = write(sock, data, size);
+    if(result ==  -1)
+    {
+        throw WriteFailure(); // wyjatek
+    }
+    else
+        return static_cast<size_t>(result);
+}
+
+TcpSocket::~TcpSocket()
+{
+    closeSocket();
+}

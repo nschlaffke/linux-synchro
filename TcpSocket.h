@@ -15,16 +15,27 @@ using namespace std;
 class TcpSocket
 {
 public:
+
+    class SocketException {};
+    class CreationFailure : SocketException {};
+    class ConnectionFailure : SocketException {};
+    class WrongState : SocketException {};
+    class ReadFailure : SocketException {};
+    class WriteFailure : SocketException {};
+
+    virtual ~TcpSocket();
+
+    typedef unsigned char byte;
     TcpSocket(string ip, unsigned short port);
     void doConnect();
     bool isConnected();
     void closeSocket();
-    void recieveData();
-    void sendData();
+    size_t recieveData(byte buffer[], size_t bufferSize);
+    size_t sendData(const byte data[], size_t size);
 
 private:
     bool connectionEstablished;
-    const string ipNumber;
+    const string ipAddress;
     const unsigned short int portNumber;
     int sock;
 };
