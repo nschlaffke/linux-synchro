@@ -25,13 +25,12 @@ public:
 
     virtual ~TcpSocket();
 
-    typedef unsigned char byte;
-    TcpSocket(string ip, unsigned short port);
+    TcpSocket(const string ip, const unsigned short port);
     void doConnect();
     bool isConnected();
     void closeSocket();
-    size_t recieveData(byte buffer[], size_t bufferSize);
-    size_t sendData(const byte data[], size_t size);
+    size_t recieveData(char buffer[], const size_t bufferSize);
+    size_t sendData(const char data[], const size_t size);
 
 private:
     bool connectionEstablished;

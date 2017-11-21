@@ -5,7 +5,7 @@
 #include <iostream>
 #include "TcpSocket.h"
 
-TcpSocket::TcpSocket(string ip, unsigned short port) : ipAddress(ip), portNumber(port), connectionEstablished(false)
+TcpSocket::TcpSocket(const string ip, const unsigned short port) : ipAddress(ip), portNumber(port), connectionEstablished(false)
 {
     sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sock == -1)
@@ -45,7 +45,7 @@ void TcpSocket::closeSocket()
     close(sock);
 }
 
-size_t TcpSocket::recieveData(byte buffer[], size_t bufferSize)
+size_t TcpSocket::recieveData(char buffer[], size_t bufferSize)
 {
     if (!connectionEstablished)
     {
@@ -61,12 +61,12 @@ size_t TcpSocket::recieveData(byte buffer[], size_t bufferSize)
         return static_cast<size_t>(result);
 }
 
-size_t TcpSocket::sendData(const byte data[], size_t size)
+size_t TcpSocket::sendData(const char data[], size_t size)
 {
     ssize_t result = write(sock, data, size);
     if(result ==  -1)
     {
-        throw WriteFailure(); // wyjatek
+        throw WriteFailure();
     }
     else
         return static_cast<size_t>(result);

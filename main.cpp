@@ -12,6 +12,6 @@ int main()
     {
         string text;
         cin >> text;
-        socket.sendData(reinterpret_cast<const TcpSocket::byte *>(text.c_str()), text.length());
+        socket.sendData(text.c_str(), text.length());
     }
 }
