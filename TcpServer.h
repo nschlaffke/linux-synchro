@@ -5,10 +5,19 @@
 #ifndef DROPBOX_TCPSERVER_H
 #define DROPBOX_TCPSERVER_H
 
+#include "TcpSocket.h"
+#include <string>
+#include <stdexcept>
+#include <exception>
+#include "Descriptor.h"
 
-class TcpServer
+class TcpServer : private TcpSocket
 {
-
+public:
+    TcpServer();
+    TcpServer(const std::string ip, const unsigned short port, const unsigned int queueSize);
+    TcpServer(const std::string ip, const unsigned short port);
+    TcpSocket doAccept(); // changes parent class' method access modifier
 };
 
 

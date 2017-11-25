@@ -7,36 +7,47 @@
 
 #include <unistd.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
+#include <exception>
+#include <stdexcept>
+#include <memory>
+#include "Descriptor.h"
 
-using namespace std;
 class TcpSocket
 {
 public:
 
-    class SocketException {};
-    class CreationFailure : SocketException {};
-    class ConnectionFailure : SocketException {};
-    class WrongState : SocketException {};
-    class ReadFailure : SocketException {};
-    class WriteFailure : SocketException {};
+    class SocketException : public std::runtime_error
+    {
+    public:
+        SocketException(const std::string &s) : runtime_error(s) {}
+    };
 
     virtual ~TcpSocket();
-
-    TcpSocket(const string ip, const unsigned short port);
+    TcpSocket();
+    TcpSocket(const std::string ip, const unsigned short port);
     void doConnect();
     bool isConnected();
+    void doClose();
     void closeSocket();
     size_t recieveData(char buffer[], const size_t bufferSize);
     size_t sendData(const char data[], const size_t size);
 
+protected:
+    TcpSocket doAccept();
+    void doListen(const unsigned int queueSize);
+    void doBind();
+
 private:
     bool connectionEstablished;
-    const string ipAddress;
-    const unsigned short int portNumber;
-    int sock;
+    std::string ipAddress;
+    unsigned short int portNumber;
+    Descriptor sock;
+    bool bound;
+    sockaddr_in addr;
 };
 
 
