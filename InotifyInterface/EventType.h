@@ -1,8 +1,9 @@
 //
 // Created by PJ on 22.12.17.
 //
+#ifndef EVENTTYPE_H
+#define EVENTTYPE_H
 
-#pragma once
 #include <string>
 #include <boost/filesystem.hpp>
 #include <sys/inotify.h>
@@ -29,3 +30,5 @@ class EventType {
        
         string flagsToString(int eventFlag);
 };
+
+#endif

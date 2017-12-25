@@ -83,3 +83,8 @@ string EventType::flagsToString(int eventFlag)
     
     return flagsString;
 }
+
+EventType::~EventType()
+{
+
+}

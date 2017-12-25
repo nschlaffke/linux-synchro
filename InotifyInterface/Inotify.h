@@ -2,7 +2,9 @@
 // Created by PJ on 22.12.17.
 //
 
-#pragma once
+#ifndef INOTIFY_H
+#define INOTIFY_H
+
 #include <string>
 #include <queue>
 #include <map>
@@ -56,3 +58,5 @@ class Inotify{
         EventType getNextEvent();
         int getLastErrno();
 };
+
+#endif
