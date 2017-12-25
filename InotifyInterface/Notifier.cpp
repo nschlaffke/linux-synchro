@@ -59,7 +59,7 @@ auto Notifier::run_once() -> void
     eventObserver(notification);
 }
 
-Notifier BuildNotifier() { return {};}
+Notifier BuildNotifier() { return {};} // what is it for?
 
 ostream& operator <<(ostream& stream, const Event& event)
 {

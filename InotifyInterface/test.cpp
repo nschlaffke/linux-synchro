@@ -20,11 +20,11 @@ int main(int argc, char **argv) {
     boost::filesystem::path dir(argv[1]);
 
     auto handleNotification = [&](Notification notification) {
-        std::cout << "Event" << notification.event << " on " <<  notification.path << " was triggered." << std::endl;
+        std::cout << "Event" << char(notification.event); //<< " on " <<  notification.path << " was triggered." << std::endl; // TODO
     };
 
     std::cout << "Setup watches for " << dir << "..." << std::endl;
-    auto notifier = BuildNotifier()
+    Notifier notifier = Notifier() 
         .watchPathRecursively(dir)
         .ignoreFileOnce("file")
         .onEvents({Event::create, Event::modify, Event::remove, Event::move}, handleNotification);
