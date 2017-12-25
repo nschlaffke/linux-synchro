@@ -3,31 +3,30 @@
 //
 
 #include "Notifier.h"
-#include <boost/filesystem.hpp>
 #include <iostream>
 
 using namespace inotify;
 
 int main(int argc, char **argv) {
 
-    std::cout << argv[1] << " " << argv[2] << endl << endl;
-
     if (argc <= 1) {
-        std::cout << "Usage: ./inotify_example /path/to/dir" << std::endl;
+        std::cout << "Usage: ./test.o /path/to/dir" << std::endl;
         exit(0);
     }
 
     boost::filesystem::path dir(argv[1]);
 
-    auto handleNotification = [&](Notification notification) {
-        std::cout << "Event" << char(notification.event); //<< " on " <<  notification.path << " was triggered." << std::endl; // TODO
+    auto handleNotification = [&](Notification notification)
+    {
+
+        std::cout << "Event: " << Notifier::getEventName(notification.event) << " on " <<  notification.path.relative_path() << " was triggered." << std::endl;
     };
 
     std::cout << "Setup watches for " << dir << "..." << std::endl;
     Notifier notifier = Notifier() 
         .watchPathRecursively(dir)
         .ignoreFileOnce("file")
-        .onEvents({Event::create, Event::modify, Event::remove, Event::move}, handleNotification);
+        .onEvents(Notifier::events, handleNotification);
 
     std::cout << "Waiting for events..." << std::endl;
     notifier.run();

@@ -8,6 +8,7 @@ EventType::EventType(const int watchDescriptor, int eventFlag, const boost::file
     watchDescriptor(watchDescriptor),
     eventFlag(eventFlag),
     path(path){
+
 }
 
 int EventType::getWatchDescriptor()

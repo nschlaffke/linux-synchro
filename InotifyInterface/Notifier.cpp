@@ -6,6 +6,64 @@
 
 using namespace inotify;
 
+const vector<Event> Notifier::events =
+        {Event::access, Event::attrib, Event::close_write, Event::close_nowrite, Event::create,
+         Event::remove, Event::remove_self, Event::close, Event::modify, Event::move_self,
+         Event::moved_from, Event::moved_to, Event::move, Event::open, Event::all};
+
+string Notifier::getEventName(Event event)
+{
+    switch (event) {
+        case Event::access:
+            return "access(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::attrib:
+            return "attrib(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::close_write:
+            return "close_write(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::close_nowrite:
+            return "close_nowrite(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::create:
+            return "close_nowrite(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::remove:
+            return "remove(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::remove_self:
+            return "remove_self(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::close:
+            return "close(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::modify:
+            return "modify(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::move_self:
+            return "move_self(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::moved_from:
+            return "moved_from(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::moved_to:
+            return "moved_to(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::move:
+            return "move(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::open:
+            return "open(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::all:
+            return "all(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        default:
+            throw std::runtime_error("Unknown inotify event");
+    }
+}
+
 auto Notifier::watchPathRecursively(boost::filesystem::path path) -> Notifier&
 {
     mInotify->watchDirectoryRecursively(path);
@@ -33,7 +91,8 @@ auto Notifier::onEvent(Event event, std::function<void(Notification)> eventObser
 
 auto Notifier::onEvents(vector<Event> events, std::function<void(Notification)> eventObserver) -> Notifier&
 {
-    for(auto event : events){
+    for(auto event : events)
+    {
         mInotify->setEventFlag(mInotify->getEventFlag() | static_cast<uint32_t>(event));
         mEventObserver[event] = eventObserver;
     }
@@ -47,7 +106,8 @@ auto Notifier::run_once() -> void
     Event event = static_cast<Event>(fileSystemEvent.getWEventFlag());
 
     auto eventAndEventObserver = mEventObserver.find(event);
-    if (eventAndEventObserver == mEventObserver.end()) {
+    if (eventAndEventObserver == mEventObserver.end())
+    {
         return;
     }
 
@@ -59,61 +119,7 @@ auto Notifier::run_once() -> void
     eventObserver(notification);
 }
 
-Notifier BuildNotifier() { return {};} // what is it for?
-
-ostream& operator <<(ostream& stream, const Event& event)
-{
-    switch(event){
-        case Event::access:
-            stream << "access(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::attrib:
-            stream << "attrib(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::close_write:
-            stream << "close_write(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::close_nowrite:
-            stream << "close_nowrite(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::create:
-            stream << "close_nowrite(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::remove:
-            stream << "remove(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::remove_self:
-            stream << "remove_self(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::close:
-            stream << "close(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::modify:
-            stream << "modify(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::move_self:
-            stream << "move_self(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::moved_from:
-            stream << "moved_from(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::moved_to:
-            stream << "moved_to(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::move:
-            stream << "move(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::open:
-            stream << "open(" << static_cast<uint32_t >(event) << ")";
-            break;
-        case Event::all:
-            stream << "all(" << static_cast<uint32_t >(event) << ")";
-            break;
-        default:
-            throw std::runtime_error("Unknown inotify event");
-    }
-    return stream;
-}
+//Notifier BuildNotifier() { return {};} // not needed for now
 
 auto Notifier::run() -> void
 {

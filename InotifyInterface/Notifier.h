@@ -57,8 +57,10 @@ namespace inotify {
             auto ignoreFileOnce(string fileName) -> Notifier&;
             auto onEvent(Event event, function<void(Notification)>) -> Notifier&;
             auto onEvents(vector<Event> event, function<void(Notification)>) -> Notifier&;
-    };
 
+            static const vector <Event> events;
+            static string getEventName(Event event);
+    };
 }
 
 #endif
