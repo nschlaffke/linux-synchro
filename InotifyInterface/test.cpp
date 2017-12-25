@@ -19,7 +19,9 @@ int main(int argc, char **argv) {
     auto handleNotification = [&](Notification notification)
     {
 
-        std::cout << "Event: " << Notifier::getEventName(notification.event) << " on " <<  notification.path.relative_path() << " was triggered." << std::endl;
+        std::cout << "Event: " << Notifier::getEventName(notification.event) << " on " <<  notification.path.string() << " was triggered." << std::endl;
+        // if a path to a single file is passed as a parameter (argv[1]) instead of passing a path to a whole directory,
+        // a gibberish sign is showed instead of the second quotation mark in the console output.
     };
 
     std::cout << "Setup watches for " << dir << "..." << std::endl;
