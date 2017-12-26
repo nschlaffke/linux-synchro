@@ -1,1 +1,4 @@
-Perform your modifications here, in order to figure out how inotify works.
+test.txt
+test.txt
+test.txt
+test.txt

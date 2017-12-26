@@ -14,7 +14,10 @@
 #include <exception>
 #include <stdexcept>
 #include <memory>
+#include <fstream>
 #include "Descriptor.h"
+
+#define CHUNK_SIZE 1024
 
 class TcpSocket
 {
@@ -35,13 +38,15 @@ public:
     void closeSocket();
     size_t recieveData(char buffer[], const size_t bufferSize);
     size_t sendData(const char data[], const size_t size);
-
+    void recieveFile(const std::string fileName, size_t fileSize); // fileName jest sciezka do pliku
+    void sendFile(const std::string fileName);
 protected:
     TcpSocket doAccept();
     void doListen(const unsigned int queueSize);
     void doBind();
 
 private:
+    size_t getFileSize(const std::string fileName);
     bool connectionEstablished;
     std::string ipAddress;
     unsigned short int portNumber;

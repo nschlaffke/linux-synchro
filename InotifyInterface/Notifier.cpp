@@ -6,10 +6,13 @@
 
 using namespace inotify;
 
-const vector<Event> Notifier::events =
+/*const vector<Event> Notifier::events =
         {Event::access, Event::attrib, Event::close_write, Event::close_nowrite, Event::create,
          Event::remove, Event::remove_self, Event::close, Event::modify, Event::move_self,
          Event::moved_from, Event::moved_to, Event::move, Event::open, Event::all};
+*/
+const vector<Event> Notifier::events = {Event::modify};
+
 
 string Notifier::getEventName(Event event)
 {
@@ -64,32 +67,32 @@ string Notifier::getEventName(Event event)
     }
 }
 
-auto Notifier::watchPathRecursively(boost::filesystem::path path) -> Notifier&
+Notifier& Notifier::watchPathRecursively(boost::filesystem::path path)
 {
     mInotify->watchDirectoryRecursively(path);
     return *this;
 }
 
-auto Notifier::watchFile(boost::filesystem::path file) -> Notifier&
+Notifier& Notifier::watchFile(boost::filesystem::path file)
 {
     mInotify->watchFile(file);
     return *this;
 }
 
-auto Notifier::ignoreFileOnce(string fileName) -> Notifier&
+Notifier& Notifier::ignoreFileOnce(string fileName)
 {
     mInotify->ignoreFileOnce(fileName);
     return *this;
 }
 
-auto Notifier::onEvent(Event event, std::function<void(Notification)> eventObserver) -> Notifier&
+Notifier& Notifier::onEvent(Event event, std::function<void(Notification)> eventObserver)
 {
     mInotify->setEventFlag(mInotify->getEventFlag() | static_cast<uint32_t>(event));
     mEventObserver[event] = eventObserver;
     return *this;
 }
 
-auto Notifier::onEvents(vector<Event> events, std::function<void(Notification)> eventObserver) -> Notifier&
+Notifier& Notifier::onEvents(vector<Event> events, std::function<void(Notification)> eventObserver)
 {
     for(auto event : events)
     {
@@ -100,7 +103,7 @@ auto Notifier::onEvents(vector<Event> events, std::function<void(Notification)> 
     return *this;
 }
 
-auto Notifier::run_once() -> void
+void Notifier::run_once()
 {
     auto fileSystemEvent = mInotify->getNextEvent();
     Event event = static_cast<Event>(fileSystemEvent.getWEventFlag());
@@ -121,7 +124,7 @@ auto Notifier::run_once() -> void
 
 //Notifier BuildNotifier() { return {};} // not needed for now
 
-auto Notifier::run() -> void
+void Notifier::run()
 {
     while(true) {
         run_once();

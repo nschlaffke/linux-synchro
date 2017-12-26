@@ -11,7 +11,7 @@
 #include <exception>
 #include "Descriptor.h"
 
-class TcpServer : private TcpSocket
+class TcpServer : public TcpSocket
 {
 public:
     TcpServer();

@@ -50,13 +50,13 @@ namespace inotify {
         public:
             Notifier() : mInotify(make_shared<Inotify>()){}
 
-            auto run() -> void;
-            auto run_once() -> void;
-            auto watchPathRecursively(boost::filesystem::path path) -> Notifier&;
-            auto watchFile(boost::filesystem::path file) -> Notifier&;
-            auto ignoreFileOnce(string fileName) -> Notifier&;
-            auto onEvent(Event event, function<void(Notification)>) -> Notifier&;
-            auto onEvents(vector<Event> event, function<void(Notification)>) -> Notifier&;
+            void run();
+            void run_once();
+            Notifier& watchPathRecursively(boost::filesystem::path path);
+            Notifier& watchFile(boost::filesystem::path file);
+            Notifier& ignoreFileOnce(string fileName);
+            Notifier& onEvent(Event event, function<void(Notification)>);
+            Notifier& onEvents(vector<Event> event, function<void(Notification)>);
 
             static const vector <Event> events;
             static string getEventName(Event event);

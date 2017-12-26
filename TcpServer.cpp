@@ -18,7 +18,3 @@ TcpSocket TcpServer::doAccept()
 TcpServer::TcpServer()
 {}
 
-TcpServer::TcpServer(const std::string ip, const unsigned short port) : TcpSocket(ip, port)
-{
-   TcpServer(ip, port, DEFAULT_QUEUE_SIZE);
-}
