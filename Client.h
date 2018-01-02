@@ -5,9 +5,7 @@
 #ifndef DROPBOX_CLIENT_H
 #define DROPBOX_CLIENT_H
 
-
-class Client
-{
+class Client {
 
 };
 

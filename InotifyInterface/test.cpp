@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 
     boost::filesystem::path dir(argv[1]);
 
-    auto handleNotification = [&](Notification notification)
+    auto handleNotification = [&](TcpServer server, Notification notification)
     {
 
         std::cout << "Event: " << Notifier::getEventName(notification.event) << " on " <<  notification.path.string() << " was triggered." << std::endl;
@@ -31,7 +31,9 @@ int main(int argc, char **argv) {
         .onEvents(Notifier::events, handleNotification);
 
     std::cout << "Waiting for events..." << std::endl;
-    notifier.run();
+
+    TcpServer tcpServer("127.0.0.1", 8888);
+    notifier.run(tcpServer);
 
     return 0;
 }

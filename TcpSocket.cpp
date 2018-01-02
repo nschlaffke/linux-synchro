@@ -125,6 +125,16 @@ size_t TcpSocket::sendData(const char data[], size_t size)
         return static_cast<size_t>(result);
 }
 
+size_t TcpSocket::sendData(int value, size_t size)
+{
+    ssize_t result = write(sock.getVal(), &value, size);
+    if (result == -1)
+    {
+        throw SocketException(POSIXError::getErrorMessage("Failed to write"));
+    } else
+        return static_cast<size_t>(result);
+}
+
 TcpSocket::~TcpSocket()
 {
     // closeSocket();

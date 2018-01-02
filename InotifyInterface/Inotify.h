@@ -10,15 +10,13 @@
 #include <map>
 #include <vector>
 #include <boost/filesystem.hpp>
-#include <assert.h>
-#include <errno.h>
-#include <time.h>
-#include <errno.h>
+#include <cassert>
+#include <cerrno>
+#include <ctime>
 #include <string>
 #include <exception>
 #include <sstream>
 #include <memory>
-#include <boost/filesystem.hpp>
 #include <sys/inotify.h>
 #include "EventType.h"
 
@@ -40,10 +38,12 @@ class Inotify{
     map<int, boost::filesystem::path> mDirectories;
     int mInotifyFileDescriptor;
 
+    bool containsPath(boost::filesystem::path filePath);
     boost::filesystem::path watchDescriptorToPath(int watchDescriptor);
     bool isIgnored(string fileName);
     bool onTimeout(time_t eventTime);
     void removeWatch(int watchDescriptor);
+    void removeAllWatches();
     void init();
 
     public:

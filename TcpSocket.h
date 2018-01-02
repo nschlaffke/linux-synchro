@@ -38,6 +38,7 @@ public:
     void closeSocket();
     size_t recieveData(char buffer[], const size_t bufferSize);
     size_t sendData(const char data[], const size_t size);
+    size_t sendData(int value, size_t size);
     void recieveFile(const std::string fileName, size_t fileSize); // fileName jest sciezka do pliku
     void sendFile(const std::string fileName);
 protected:

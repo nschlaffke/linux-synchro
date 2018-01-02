@@ -39,6 +39,7 @@ Inotify::~Inotify()
 void Inotify::init()
 {
     mInotifyFileDescriptor = inotify_init();
+    mDirectories.clear();
     
     if(mInotifyFileDescriptor == -1)
     {
@@ -51,6 +52,7 @@ void Inotify::init()
 
 void Inotify::watchDirectoryRecursively(boost::filesystem::path path)
 {
+
     if(boost::filesystem::exists(path))
     {
         if(boost::filesystem::is_directory(path))
@@ -62,10 +64,7 @@ void Inotify::watchDirectoryRecursively(boost::filesystem::path path)
             {
                 boost::filesystem::path currentPath = *it;
 
-                if(boost::filesystem::is_directory(currentPath)){
-                    watchFile(currentPath);
-                }
-                if(boost::filesystem::is_symlink(currentPath)){
+                if(boost::filesystem::is_directory(currentPath) || boost::filesystem::is_symlink(currentPath)){
                     watchFile(currentPath);
                 }
 
@@ -80,8 +79,22 @@ void Inotify::watchDirectoryRecursively(boost::filesystem::path path)
     }
 }
 
+bool Inotify::containsPath(boost::filesystem::path filePath)
+{
+    for (auto const& entry : mDirectories)
+    {
+        if(entry.second == filePath)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Inotify::watchFile(boost::filesystem::path filePath)
 {
+
     if(boost::filesystem::exists(filePath))
     {
         mError = 0;
@@ -160,7 +173,7 @@ EventType Inotify::getNextEvent()
         memset(&buffer, 0, EVENT_BUF_LEN);
         while(length <= 0)
         {
-            length = read(mInotifyFileDescriptor, buffer, EVENT_BUF_LEN);
+            length = static_cast<int>(read(mInotifyFileDescriptor, buffer, EVENT_BUF_LEN));
             currentEventTime = time(NULL);
             if(length == -1)
             {
@@ -171,7 +184,6 @@ EventType Inotify::getNextEvent()
                 }
             }
         }
-    
 
         currentEventTime = time(NULL);
         int i = 0;

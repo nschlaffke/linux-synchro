@@ -6,12 +6,12 @@
 
 using namespace inotify;
 
-/*const vector<Event> Notifier::events =
+const vector<Event> Notifier::events =
         {Event::access, Event::attrib, Event::close_write, Event::close_nowrite, Event::create,
          Event::remove, Event::remove_self, Event::close, Event::modify, Event::move_self,
          Event::moved_from, Event::moved_to, Event::move, Event::open, Event::all};
-*/
-const vector<Event> Notifier::events = {Event::modify};
+
+// const vector<Event> Notifier::events = {Event::modify};
 
 
 string Notifier::getEventName(Event event)
@@ -85,14 +85,14 @@ Notifier& Notifier::ignoreFileOnce(string fileName)
     return *this;
 }
 
-Notifier& Notifier::onEvent(Event event, std::function<void(Notification)> eventObserver)
+Notifier& Notifier::onEvent(Event event, NotificationHandler eventObserver)
 {
     mInotify->setEventFlag(mInotify->getEventFlag() | static_cast<uint32_t>(event));
     mEventObserver[event] = eventObserver;
     return *this;
 }
 
-Notifier& Notifier::onEvents(vector<Event> events, std::function<void(Notification)> eventObserver)
+Notifier& Notifier::onEvents(vector<Event> events, NotificationHandler eventObserver)
 {
     for(auto event : events)
     {
@@ -103,7 +103,7 @@ Notifier& Notifier::onEvents(vector<Event> events, std::function<void(Notificati
     return *this;
 }
 
-void Notifier::run_once()
+void Notifier::runOnce(TcpServer socket, boost::filesystem::path path)
 {
     auto fileSystemEvent = mInotify->getNextEvent();
     Event event = static_cast<Event>(fileSystemEvent.getWEventFlag());
@@ -119,14 +119,14 @@ void Notifier::run_once()
     notification.path = fileSystemEvent.getPath();
 
     auto eventObserver = eventAndEventObserver->second;
-    eventObserver(notification);
+    eventObserver(socket, notification);
 }
 
 //Notifier BuildNotifier() { return {};} // not needed for now
 
-void Notifier::run()
+void Notifier::run(TcpServer socket, boost::filesystem::path path)
 {
     while(true) {
-        run_once();
+        runOnce(socket, path);
     }
 }

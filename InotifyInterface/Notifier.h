@@ -7,9 +7,11 @@
 
 
 #include "Inotify.h"
+#include "../TcpServer.h"
 #include <boost/filesystem.hpp>
 #include <string>
 #include <memory>
+#include <thread>
 
 using namespace std;
 
@@ -41,22 +43,24 @@ namespace inotify {
         boost::filesystem::path path;
     };
 
+    using NotificationHandler = std::function<void(TcpServer, Notification)>;
+
     class Notifier 
     {
 
         shared_ptr<Inotify> mInotify;
-        map<Event, function<void(Notification)>> mEventObserver;
+        map<Event, NotificationHandler> mEventObserver;
 
         public:
             Notifier() : mInotify(make_shared<Inotify>()){}
 
-            void run();
-            void run_once();
+            void run(TcpServer socket, boost::filesystem::path path);
+            void runOnce(TcpServer socket, boost::filesystem::path path);
             Notifier& watchPathRecursively(boost::filesystem::path path);
             Notifier& watchFile(boost::filesystem::path file);
             Notifier& ignoreFileOnce(string fileName);
-            Notifier& onEvent(Event event, function<void(Notification)>);
-            Notifier& onEvents(vector<Event> event, function<void(Notification)>);
+            Notifier& onEvent(Event event, NotificationHandler);
+            Notifier& onEvents(vector<Event> event, NotificationHandler);
 
             static const vector <Event> events;
             static string getEventName(Event event);
