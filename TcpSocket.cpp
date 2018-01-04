@@ -5,6 +5,9 @@
 #define DEBUG 0
 
 #include <iostream>
+#include <bits/fcntl-linux.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 #include "TcpSocket.h"
 #include "POSIXError.h"
 
@@ -33,44 +36,6 @@ void TcpSocket::doClose()
     sock.doClose();
 }
 
-TcpSocket TcpSocket::doAccept()
-{
-    if (!bound)
-    {
-        throw SocketException(POSIXError::getErrorMessage("Accept before binding"));
-    }
-
-    socklen_t size = sizeof(addr);
-    int fd = accept(sock.getVal(), reinterpret_cast<sockaddr *>(&addr), &size);
-
-    if (fd == -1)
-    {
-        throw SocketException(POSIXError::getErrorMessage("Failed to accept"));
-    }
-
-    TcpSocket tmp;
-    tmp.sock = fd;
-    tmp.connectionEstablished = true;
-    return tmp;
-}
-
-void TcpSocket::doBind()
-{
-    int reuse = 1;
-    int result = setsockopt(sock.getVal(), SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse));
-    if (result == -1)
-    {
-        throw SocketException(POSIXError::getErrorMessage("Failed to set socket option"));
-    }
-    result = bind(sock.getVal(), reinterpret_cast<const sockaddr *>(&addr), sizeof(addr));
-    if (result == -1)
-    {
-        throw SocketException(POSIXError::getErrorMessage("Failed to bind"));
-    } else
-    {
-        bound = true;
-    }
-}
 
 void TcpSocket::doConnect()
 {
@@ -140,16 +105,12 @@ TcpSocket::~TcpSocket()
     // closeSocket();
 }
 
-void TcpSocket::doListen(const unsigned int queueSize)
-{
-    listen(sock.getVal(), queueSize);
-}
 
 void TcpSocket::sendFile(const std::string fileName)
 {
     // TODO FILE NOT FOUND !!!
     std::ifstream file(fileName.c_str(), std::ios::binary | std::ios::in);
-    if(!file.good())
+    if (!file.good())
     {
         throw SocketException("Couldn't open file");
     }
@@ -163,8 +124,7 @@ void TcpSocket::sendFile(const std::string fileName)
             int size = std::min(int(fileSize) - CHUNK_SIZE * i, CHUNK_SIZE);
             sendData(buffer, size);
             break;
-        }
-        else
+        } else
         {
             sendData(buffer, CHUNK_SIZE);
         }
@@ -184,17 +144,64 @@ void TcpSocket::recieveFile(const std::string fileName, size_t fileSize) // file
         size_t size = recieveData(buffer, CHUNK_SIZE);
         file.write(buffer, size);
         file.seekp(size, std::ios::cur);
-        if(size < CHUNK_SIZE) // prawdopodobnie mozna usunac
+        if (size < CHUNK_SIZE) // prawdopodobnie mozna usunac
         {
             break;
         }
     }
     file.close();
 }
+
 size_t TcpSocket::getFileSize(const std::string fileName)
 {
     std::ifstream in(fileName.c_str(), std::ios::binary | std::ios::ate);
     size_t size = in.tellg();
     in.close();
     return size;
+}
+
+TcpSocket::TcpSocket(Descriptor tmp) : sock(tmp), connectionEstablished(true)
+{}
+
+void TcpSocket::setBlock()
+{
+    int flags = fcntl(sock.getVal(), F_GETFL);
+    if(flags < 0)
+    {
+        throw SocketException(POSIXError::getErrorMessage("Failed to read flags"));
+    }
+    flags = flags & (~O_NONBLOCK);
+    int tmp;
+    tmp = fcntl(sock.getVal(), F_SETFL, flags);
+    if(tmp < 0)
+    {
+        throw SocketException(POSIXError::getErrorMessage("Failed to set flags"));
+    }
+}
+
+void TcpSocket::setNoBlock()
+{
+    int tmp;
+    tmp = fcntl(sock.getVal(),
+          F_SETFL,
+          O_NONBLOCK);
+    if(tmp < 0)
+    {
+        throw SocketException(POSIXError::getErrorMessage("Failed to set non blocking mode"));
+    }
+
+}
+
+bool TcpSocket::hasData()
+{
+    int count;
+    ioctl(sock.getVal(), FIONREAD, &count);
+    if(count > 0 )
+    {
+        return true;
+    }
+    else
+    {
+        return false
+    }
 }

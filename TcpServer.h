@@ -15,9 +15,16 @@ class TcpServer : public TcpSocket
 {
 public:
     TcpServer();
+
     TcpServer(const std::string ip, const unsigned short port, const unsigned int queueSize);
+
     TcpServer(const std::string ip, const unsigned short port);
-    TcpSocket doAccept(); // changes parent class' method access modifier
+
+    TcpSocket doAccept();
+
+private:
+    void doListen(const unsigned int queueSize);
+    void doBind();
 };
 
 

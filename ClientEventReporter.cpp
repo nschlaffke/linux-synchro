@@ -64,7 +64,6 @@ void ClientEventReporter::requestOnly(TcpServer socket, Notification notificatio
 
     std::cout << "Event: " << Notifier::getEventName(event) << " on " << path << " was triggered." << std::endl;
 
-
     mtx.lock();
     // socket.sendData(); request do serwera z odpowiednim kodem
     socket.sendData(int(event), sizeof(event)); // send the event code
