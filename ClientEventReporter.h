@@ -17,6 +17,8 @@ using namespace inotify;
 
 class ClientEventReporter
 {
+    static boost::filesystem::path observedDirectory;
+    static TcpServer serverSocket;
     static vector <boost::filesystem::path> allFilePaths;
 
     static char* convertToCharArray(string path);
@@ -24,11 +26,15 @@ class ClientEventReporter
 
 public:
 
-    ClientEventReporter(boost::filesystem::path path);
-    static void requestOnly(TcpServer socket, Notification notification);
-    static void requestCreation(TcpServer socket, Notification notificationTo);
-    static void requestIfCreated(TcpServer socket, Notification notification);
-    void handleNotification(TcpServer socket, boost::filesystem::path dir);
+    ClientEventReporter(boost::filesystem::path observedDirectory, TcpServer serverSocket);
+    boost::filesystem::path getObservedDirectory();
+    void setObservedDirectory(boost::filesystem::path observedDirectory);
+    TcpServer getServerSocket();
+    void setServerSocket(TcpServer serverSocket);
+    static void requestOnly(Notification notification);
+    static void requestCreation(Notification notificationTo);
+    static void requestIfCreated(Notification notification);
+    void handleNotification();
 
 };
 

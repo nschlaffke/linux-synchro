@@ -202,6 +202,6 @@ bool TcpSocket::hasData()
     }
     else
     {
-        return false
+        return false;
     }
 }

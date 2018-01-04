@@ -11,9 +11,11 @@ using namespace inotify;
 vector<boost::filesystem::path> ClientEventReporter::allFilePaths;
 std::mutex mtx;
 
-ClientEventReporter::ClientEventReporter(boost::filesystem::path path)
+ClientEventReporter::ClientEventReporter(boost::filesystem::path observedDirectory, TcpServer serverSocket)
 {
-    ClientEventReporter::allFilePaths = collectFilePaths(path);
+    this->observedDirectory = observedDirectory;
+    this->serverSocket = serverSocket;
+    ClientEventReporter::allFilePaths = collectFilePaths(this->observedDirectory);
 }
 
 char* ClientEventReporter::convertToCharArray(string path)
@@ -23,6 +25,26 @@ char* ClientEventReporter::convertToCharArray(string path)
     convertedPath[path.size()] = '\0';
 
     return convertedPath;
+}
+
+boost::filesystem::path ClientEventReporter::getObservedDirectory()
+{
+    return observedDirectory;
+}
+
+void ClientEventReporter::setObservedDirectory(boost::filesystem::path observedDirectory)
+{
+    this->observedDirectory = observedDirectory;
+}
+
+TcpServer ClientEventReporter::getServerSocket()
+{
+    return serverSocket;
+}
+
+void ClientEventReporter::setServerSocket(TcpServer serverSocket)
+{
+    this->serverSocket = serverSocket;
 }
 
 vector <boost::filesystem::path> ClientEventReporter::collectFilePaths(boost::filesystem::path path)
@@ -56,7 +78,7 @@ vector <boost::filesystem::path> ClientEventReporter::collectFilePaths(boost::fi
     return filePaths;
 }
 
-void ClientEventReporter::requestOnly(TcpServer socket, Notification notification) //deletion = moved_from, self-deletion
+void ClientEventReporter::requestOnly(Notification notification) //deletion = moved_from, self-deletion
 {
     string path = notification.path.string();
     Event event = notification.event;
@@ -66,22 +88,22 @@ void ClientEventReporter::requestOnly(TcpServer socket, Notification notificatio
 
     mtx.lock();
     // socket.sendData(); request do serwera z odpowiednim kodem
-    socket.sendData(int(event), sizeof(event)); // send the event code
+    ClientEventReporter::serverSocket.sendData(int(event), sizeof(event)); // send the event code
     // the server should act differently depending on the type of a deletion (self rmdir or not rm)
-    socket.sendData(convertedPath, sizeof(convertedPath)); // send the path
+    ClientEventReporter::serverSocket.sendData(convertedPath, sizeof(convertedPath)); // send the path
     mtx.unlock();
 }
 
-void ClientEventReporter::requestCreation(TcpServer socket, Notification notification) //creation, modyfication, moved_to (serwer wie ze trzeba utworzyć plik)
+void ClientEventReporter::requestCreation(Notification notification) //creation, modyfication, moved_to (serwer wie ze trzeba utworzyć plik)
 {
     std::cout << "Creation\n";
     mtx.lock();
-    requestOnly(socket, notification);
-    socket.sendFile(notification.path.string());
+    requestOnly(notification);
+    ClientEventReporter::serverSocket.sendFile(notification.path.string());
     mtx.unlock();
 }
 
-void ClientEventReporter::requestIfCreated(TcpServer socket, Notification notification) //copy, creation via console for example: touch
+void ClientEventReporter::requestIfCreated(Notification notification) //copy, creation via console for example: touch
 {
     std::vector<boost::filesystem::path>::iterator it = find(ClientEventReporter::allFilePaths.begin(), ClientEventReporter::allFilePaths.end(), notification.path);
     if(it == ClientEventReporter::allFilePaths.end())
@@ -89,41 +111,41 @@ void ClientEventReporter::requestIfCreated(TcpServer socket, Notification notifi
         std::cout << "Attrib\n";
 
         mtx.lock();
-        requestOnly(socket, notification);
-        socket.sendFile(notification.path.string());
+        requestOnly(notification);
+        ClientEventReporter::serverSocket.sendFile(notification.path.string());
         mtx.unlock();
 
         allFilePaths.push_back(notification.path);
     }
 }
 
-void runNewThread(Notifier notifier, TcpServer socket, boost::filesystem::path dir)
+void runNewThread(Notifier notifier)
 {
-    notifier.run(socket, dir);
+    notifier.run();
 }
 
-void ClientEventReporter::handleNotification(TcpServer socket, boost::filesystem::path dir)
+void ClientEventReporter::handleNotification()
 {
     Notifier delNotifier = Notifier()
-            .watchPathRecursively(dir)
+            .watchPathRecursively(ClientEventReporter::observedDirectory)
             .ignoreFileOnce("file")
             .onEvents({Event::moved_from, Event::remove, Event::remove_self}, requestOnly);
 
     Notifier newNotifier = Notifier()
-            .watchPathRecursively(dir)
+            .watchPathRecursively(ClientEventReporter::observedDirectory)
             .ignoreFileOnce("file")
             .onEvents({Event::moved_to, Event::create, Event::modify}, requestCreation);
 
     Notifier attribNotifier = Notifier()
-            .watchPathRecursively(dir)
+            .watchPathRecursively(ClientEventReporter::observedDirectory)
             .ignoreFileOnce("file")
-            .onEvents({Event::attrib}, this->requestIfCreated);
+            .onEvents({Event::attrib}, requestIfCreated);
 
     std::cout << "Waiting for events..." << std::endl;
 
-    std::thread t1(runNewThread, delNotifier, socket, dir);
-    std::thread t2(runNewThread, newNotifier, socket, dir);
-    std::thread t3(runNewThread, attribNotifier, socket, dir);
+    std::thread t1(runNewThread, delNotifier);
+    std::thread t2(runNewThread, newNotifier);
+    std::thread t3(runNewThread, attribNotifier);
     t1.join();
     t2.join();
     t3.join();
