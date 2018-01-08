@@ -36,6 +36,10 @@ public:
     static void requestIfCreated(Notification notification);
     void handleNotification();
 
+    /*
+     TODO: Implement methods responsible for receiving and handling messeges from server
+     */
+
 };
 
 #endif //DROPBOX_CLIENTEVENTREPORTER_H

@@ -4,8 +4,6 @@
 
 #include "ClientEventReporter.h"
 
-//TODO: PERFORM TESTS USING NC, VIABLE ONLY WHEN A CLIENT INTERFACE IS PROVIDED
-
 using namespace inotify;
 
 vector<boost::filesystem::path> ClientEventReporter::allFilePaths;
@@ -87,7 +85,7 @@ void ClientEventReporter::requestOnly(Notification notification) //deletion = mo
     std::cout << "Event: " << Notifier::getEventName(event) << " on " << path << " was triggered." << std::endl;
 
     mtx.lock();
-    // socket.sendData(); request do serwera z odpowiednim kodem
+    // socket.sendData();
     ClientEventReporter::serverSocket.sendData(int(event), sizeof(event)); // send the event code
     // the server should act differently depending on the type of a deletion (self rmdir or not rm)
     ClientEventReporter::serverSocket.sendData(convertedPath, sizeof(convertedPath)); // send the path

@@ -122,8 +122,6 @@ void Notifier::runOnce()
     eventObserver(notification);
 }
 
-//Notifier BuildNotifier() { return {};} // not needed for now
-
 void Notifier::run()
 {
     while(true) {
