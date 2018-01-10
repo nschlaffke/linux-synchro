@@ -43,7 +43,7 @@ namespace inotify {
         boost::filesystem::path path;
     };
 
-    using NotificationHandler = std::function<void(TcpServer, Notification)>;
+    using NotificationHandler = std::function<void(Notification)>;
 
     class Notifier 
     {
@@ -54,8 +54,8 @@ namespace inotify {
         public:
             Notifier() : mInotify(make_shared<Inotify>()){}
 
-            void run(TcpServer socket, boost::filesystem::path path);
-            void runOnce(TcpServer socket, boost::filesystem::path path);
+            void run();
+            void runOnce();
             Notifier& watchPathRecursively(boost::filesystem::path path);
             Notifier& watchFile(boost::filesystem::path file);
             Notifier& ignoreFileOnce(string fileName);

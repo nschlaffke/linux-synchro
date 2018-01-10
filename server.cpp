@@ -16,6 +16,8 @@
 using namespace std;
 void acceptClients(TcpServer tcpServer, mutex clientsMutex, vector<TcpSocket> clients);
 
+//TODO: Finish implementing functions responsible for answering to client requests
+
 int main(int argc, char *argv[])
 {
 #ifndef DEBUG
@@ -40,11 +42,10 @@ int main(int argc, char *argv[])
         {
             if(!sock.hasData())
             {
-                // nic nie wysyla
                 // TODO implement heartbeat protocol
                 continue;
             }
-            // pobieramy numerek zdarzenia
+
             int messageBuffer = 0;
             int tmp;
             tmp = sock.recieveData(reinterpret_cast<char *>(&messageBuffer), messageSize);

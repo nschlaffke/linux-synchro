@@ -103,7 +103,7 @@ Notifier& Notifier::onEvents(vector<Event> events, NotificationHandler eventObse
     return *this;
 }
 
-void Notifier::runOnce(TcpServer socket, boost::filesystem::path path)
+void Notifier::runOnce()
 {
     auto fileSystemEvent = mInotify->getNextEvent();
     Event event = static_cast<Event>(fileSystemEvent.getWEventFlag());
@@ -119,14 +119,12 @@ void Notifier::runOnce(TcpServer socket, boost::filesystem::path path)
     notification.path = fileSystemEvent.getPath();
 
     auto eventObserver = eventAndEventObserver->second;
-    eventObserver(socket, notification);
+    eventObserver(notification);
 }
 
-//Notifier BuildNotifier() { return {};} // not needed for now
-
-void Notifier::run(TcpServer socket, boost::filesystem::path path)
+void Notifier::run()
 {
     while(true) {
-        runOnce(socket, path);
+        runOnce();
     }
 }

@@ -144,7 +144,7 @@ void TcpSocket::recieveFile(const std::string fileName, size_t fileSize) // file
         size_t size = recieveData(buffer, CHUNK_SIZE);
         file.write(buffer, size);
         file.seekp(size, std::ios::cur);
-        if (size < CHUNK_SIZE) // prawdopodobnie mozna usunac
+        if (size < CHUNK_SIZE)
         {
             break;
         }
@@ -202,6 +202,6 @@ bool TcpSocket::hasData()
     }
     else
     {
-        return false
+        return false;
     }
 }
