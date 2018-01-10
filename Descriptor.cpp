@@ -8,18 +8,10 @@
 Descriptor::Descriptor()
 {}
 
-Descriptor::Descriptor(int s) : fd(s), isOpen(true), copied(false)
+Descriptor::Descriptor(int s) : fd(s), isOpen(true)
 {
 }
 
-Descriptor::~Descriptor()
-{
-    if(isOpen and !copied)
-    {
-        close(fd);
-        std::cout << "Closing " << fd << std::endl;
-    }
-}
 
 int Descriptor::getVal()
 {
@@ -46,7 +38,6 @@ bool Descriptor::isValid()
 
 Descriptor::Descriptor(const Descriptor &d)
 {
-    copied = true;
     fd = d.fd;
     isOpen = d.isOpen;
 }
@@ -55,8 +46,6 @@ void Descriptor::operator=(const Descriptor &rhs)
 {
     fd = rhs.fd;
     isOpen = rhs.isOpen;
-    copied = false;
-    rhs.copied = true;
 }
 
 

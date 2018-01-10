@@ -5,7 +5,6 @@
 #define DEBUG 0
 
 #include <iostream>
-#include <bits/fcntl-linux.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include "TcpSocket.h"
@@ -65,7 +64,7 @@ void TcpSocket::closeSocket()
     close(sock.getVal());
 }
 
-size_t TcpSocket::recieveData(char buffer[], size_t bufferSize)
+size_t TcpSocket::recieveData(char *buffer, size_t bufferSize)
 {
     if (!connectionEstablished)
     {
@@ -90,16 +89,6 @@ size_t TcpSocket::sendData(const char data[], size_t size)
         return static_cast<size_t>(result);
 }
 
-size_t TcpSocket::sendData(int value, size_t size)
-{
-    ssize_t result = write(sock.getVal(), &value, size);
-    if (result == -1)
-    {
-        throw SocketException(POSIXError::getErrorMessage("Failed to write"));
-    } else
-        return static_cast<size_t>(result);
-}
-
 TcpSocket::~TcpSocket()
 {
     // closeSocket();
@@ -108,7 +97,6 @@ TcpSocket::~TcpSocket()
 
 void TcpSocket::sendFile(const std::string fileName)
 {
-    // TODO FILE NOT FOUND !!!
     std::ifstream file(fileName.c_str(), std::ios::binary | std::ios::in);
     if (!file.good())
     {
@@ -124,13 +112,13 @@ void TcpSocket::sendFile(const std::string fileName)
             int size = std::min(int(fileSize) - CHUNK_SIZE * i, CHUNK_SIZE);
             sendData(buffer, size);
             break;
-        } else
+        }
+        else
         {
             sendData(buffer, CHUNK_SIZE);
         }
         file.seekg(CHUNK_SIZE, std::ios::cur);
     }
-
     file.close();
 }
 
@@ -204,4 +192,32 @@ bool TcpSocket::hasData()
     {
         return false;
     }
+}
+
+void TcpSocket::sendData(IntType data)
+{
+    IntType dataToSend = htonl(data);
+    int bytes = sizeof(dataToSend);
+    char *dataPointer = reinterpret_cast<char *>(&dataToSend);
+    int sent;
+    do
+    {
+        sent = sendData(dataPointer, bytes);
+        bytes -= sent;
+        data += sent;
+    }while(bytes > 0);
+}
+
+void TcpSocket::recieveData(IntType &data)
+{
+    IntType dataToRecieve;
+    int bytes = sizeof(dataToRecieve);
+    char *dataPointer = reinterpret_cast<char *>(&dataToRecieve);
+    int recieved = 0;
+    do
+    {
+       recieved += recieveData(dataPointer, bytes);
+
+    }while(bytes - recieved > 0);
+    data = ntohl(dataToRecieve);
 }

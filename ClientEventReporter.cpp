@@ -86,9 +86,11 @@ void ClientEventReporter::requestOnly(Notification notification) //deletion = mo
 
     mtx.lock();
     // socket.sendData();
-    ClientEventReporter::serverSocket.sendData(int(event), sizeof(event)); // send the event code
+    //ClientEventReporter::serverSocket.sendData(int(event), sizeof(event)); // send the event code
+    // socket.sendData(); request do serwera z odpowiednim kodem
+    //socket.sendData(int(event)); // send the event code
     // the server should act differently depending on the type of a deletion (self rmdir or not rm)
-    ClientEventReporter::serverSocket.sendData(convertedPath, sizeof(convertedPath)); // send the path
+    //ClientEventReporter::serverSocket.sendData(convertedPath, sizeof(convertedPath)); // send the path
     mtx.unlock();
 }
 

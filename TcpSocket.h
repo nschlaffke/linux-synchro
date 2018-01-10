@@ -22,7 +22,7 @@
 class TcpSocket
 {
 public:
-
+    typedef uint32_t IntType;
     class SocketException : public std::runtime_error
     {
     public:
@@ -44,18 +44,24 @@ public:
 
     void closeSocket();
 
+    void recieveFile(const std::string fileName, size_t fileSize); // fileName jest sciezka do pliku
+    void sendFile(const std::string fileName);
+
+    void setNoBlock();
+
+    void setBlock();
+
+    bool hasData();
+
+    TcpSocket(Descriptor tmp);
+
+    void recieveData(IntType &data);
+
+    void sendData(IntType data);
+
     size_t recieveData(char buffer[], const size_t bufferSize);
 
     size_t sendData(const char data[], const size_t size);
-
-    size_t sendData(int value, size_t size);
-
-    void recieveFile(const std::string fileName, size_t fileSize); // fileName jest sciezka do pliku
-    void sendFile(const std::string fileName);
-    void setNoBlock();
-    void setBlock();
-    bool hasData();
-    TcpSocket(Descriptor tmp);
 
 protected:
     bool bound;

@@ -22,13 +22,12 @@ public:
     Descriptor(int s);
     void doClose();
     int getVal();
-    ~Descriptor();
 
 private:
-    mutable bool copied;
     bool isOpen;
     bool isValid();
     int fd;
+
 };
 
 
