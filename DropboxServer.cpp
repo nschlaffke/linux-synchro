@@ -6,22 +6,8 @@
 #include <thread>
 #include "DropboxServer.h"
 
-void DropboxServer::sendFileProcedure(std::string filePath)
-{
-
-}
 
 void DropboxServer::recieveFileProcedure(std::string filePath)
-{
-
-}
-
-void DropboxServer::deleteFileProcedure(std::string filePath)
-{
-
-}
-
-void DropboxServer::createDirectoryProcedure(std::string directoryPath)
 {
 
 }
@@ -50,8 +36,8 @@ int DropboxServer::run()
                 continue;
             }
             // pobieramy numerek zdarzenia
-            TcpSocket::IntType tmp;
-            sock.recieveData(tmp);
+            Event tmp;
+            recieveEvent(tmp);
             if (tmp < 0)
             {
                 cout << "ERROR: COULDN'T RECIEVE MESSAGE\n";
@@ -68,8 +54,8 @@ int DropboxServer::run()
                     // klient dodal plik, serwer go pobiera nastepnie wysyla do wszystkich innych
                     cout << "NEW FILE FROM CLIENT\n";
                     // klient wysyla rozmiar pliku
-                    TcpSocket::IntType size;
-                    sock.recieveData(size);
+                    IntType size;
+                    recieveInt(size);
                     cout << "FILE SIZE: " << size << endl;
                     // klient wysyla nazwe pliku
 
@@ -104,16 +90,16 @@ void DropboxServer::acceptClients()
     }
 }
 
-DropboxServer::DropboxServer(const std::string &ip, const unsigned short port)
-        : TcpServer(ip, port), newClient(false)
+DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, const std::string path)
+        : Dropbox(ip, port, path), newClient(false)
 {}
-
-void DropboxServer::moveFileProcedure(std::string source, std::string destination)
-{
-
-}
 
 void DropboxServer::newClientProcedure()
 {
     
+}
+
+void DropboxServer::sendFileProcedure(std::string filePath)
+{
+
 }

@@ -11,8 +11,7 @@ using namespace std;
 
 int main()
 {
-    const string ip = "192.168.8.105";
-    const short port = 8888;
-    DropboxClient dropboxClient(ip, port);
+
+    DropboxClient dropboxClient(ip, port, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox");
     dropboxClient.run();
 }

@@ -15,17 +15,9 @@ void DropboxClient::recieveFileProcedure(std::string filePath)
 
 }
 
-void DropboxClient::deleteFileProcedure(std::string filePath)
-{
 
-}
-
-void DropboxClient::createDirectoryProcedure(std::string directoryPath)
-{
-
-}
-
-DropboxClient::DropboxClient(const std::string &ip, const unsigned short port) : TcpSocket(ip, port)
+DropboxClient::DropboxClient(const std::string &ip, const unsigned short port, const std::string folderPath)
+        : Dropbox(ip, port, folderPath)
 {}
 
 int DropboxClient::run()
@@ -33,14 +25,9 @@ int DropboxClient::run()
    newClientProcedure();
 }
 
-void DropboxClient::moveFileProcedure(std::string source, std::string destination)
-{
-
-}
-
 void DropboxClient::newClientProcedure()
 {
-    sendData(Dropbox::NEW_CLIENT);
+    sendEvent(Dropbox::NEW_CLIENT);
     Dropbox::Event event;
     recieveEvent(event);
     if(event == Dropbox::NO_FILES)

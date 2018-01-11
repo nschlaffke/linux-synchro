@@ -1,8 +1,8 @@
 #include <iostream>
-#include "TcpSocket.h"
-#include "TcpServer.h"
-#include "InotifyInterface/Notifier.h"
-#include "ClientEventReporter.h"
+#include "../TcpSocket.h"
+#include "../TcpServer.h"
+#include "../InotifyInterface/Notifier.h"
+#include "../ClientEventReporter.h"
 
 using namespace std;
 

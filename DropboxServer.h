@@ -15,21 +15,18 @@
 class DropboxServer : public Dropbox, public TcpServer
 {
 private:
+protected:
     void sendFileProcedure(std::string filePath) override;
 
+private:
     void recieveFileProcedure(std::string filePath) override;
 
-    void moveFileProcedure(std::string source, std::string destination) override;
-
-    void deleteFileProcedure(std::string filePath) override;
-
-    void createDirectoryProcedure(std::string directoryPath) override;
 
     void newClientProcedure();
 
 public:
 
-    DropboxServer(const std::string &ip, const unsigned short port);
+    DropboxServer(const std::string &ip, const unsigned short port, const std::string path);
     int run();
 
 private:

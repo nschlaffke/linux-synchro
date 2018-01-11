@@ -193,7 +193,8 @@ bool TcpSocket::hasData()
         return false;
     }
 }
-
+// moved to Dropbox.cpp
+/*
 void TcpSocket::sendData(IntType data)
 {
     IntType dataToSend = htonl(data);
@@ -208,6 +209,7 @@ void TcpSocket::sendData(IntType data)
     }while(bytes > 0);
 }
 
+
 void TcpSocket::recieveData(IntType &data)
 {
     IntType dataToRecieve;
@@ -221,3 +223,4 @@ void TcpSocket::recieveData(IntType &data)
     }while(bytes - recieved > 0);
     data = ntohl(dataToRecieve);
 }
+*/

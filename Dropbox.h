@@ -8,6 +8,7 @@
 #include <string>
 #include <stdexcept>
 #include "TcpSocket.h"
+#include <boost/filesystem/path.hpp>
 
 class Dropbox : public virtual TcpSocket
 {
@@ -18,9 +19,19 @@ public:
         DropboxException(const std::string &s) : runtime_error(s)
         {}
     };
+
     virtual int run() = 0;
 
+    Dropbox(const std::string &ip, const unsigned short port, const std::string &folderPath);
+
 protected:
+
+    void createDirectory(std::string directoryPath);
+
+    void deleteFiles(std::string filePath);
+    
+    void moveFile(std::string source, std::string destination);
+
     enum Event
     {
         HEARTBEAT,
@@ -33,19 +44,24 @@ protected:
         NO_FILES
     };
 
+    typedef uint32_t IntType;
+
+    void sendEvent(Event event);
+
+    void recieveEvent(Event &event);
+
+    void recieveInt(IntType &data);
+
+    void sendInt(IntType data);
+
     virtual void sendFileProcedure(std::string filePath) = 0;
 
     virtual void recieveFileProcedure(std::string filePath) = 0;
 
-    virtual void moveFileProcedure(std::string source, std::string destination) = 0;
+    boost::filesystem::path createPath(std::string path);
 
-    virtual void deleteFileProcedure(std::string filePath) = 0;
-
-    virtual void createDirectoryProcedure(std::string directoryPath) = 0;
-
-    virtual void sendEvent(Event event);
-
-    virtual void recieveEvent(Event &event);
+private:
+    const std::string folderPath;
 
 };
 
