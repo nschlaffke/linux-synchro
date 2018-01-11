@@ -29,7 +29,7 @@ protected:
     void createDirectory(std::string directoryPath);
 
     void deleteFiles(std::string filePath);
-    
+
     void moveFile(std::string source, std::string destination);
 
     enum Event
@@ -47,21 +47,29 @@ protected:
     typedef uint32_t IntType;
 
     void sendEvent(Event event);
+    void sendEvent(TcpSocket &sock, Event event);
 
     void recieveEvent(Event &event);
-
-    void recieveInt(IntType &data);
+    void recieveEvent(TcpSocket &sock, Event &event);
 
     void sendInt(IntType data);
-
-    virtual void sendFileProcedure(std::string filePath) = 0;
-
-    virtual void recieveFileProcedure(std::string filePath) = 0;
+    void sendInt(TcpSocket &sock, IntType data);
+    
+    void receiveInt(TcpSocket &sock, IntType &data);
+    void receiveInt(IntType &data);
 
     boost::filesystem::path createPath(std::string path);
 
-private:
+    void sendString(TcpSocket &sock, std::string text);
+    void sendString(std::string text);
+
+    void receiveString(std::string &text);
+    void receiveString(TcpSocket &sock, std::string &text);
+
     const std::string folderPath;
+
+private:
+    const int maxStringSize;
 
 };
 

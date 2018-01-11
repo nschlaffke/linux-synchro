@@ -4,13 +4,9 @@
 
 #include <iostream>
 #include <thread>
+#include <boost/filesystem.hpp>
 #include "DropboxServer.h"
 
-
-void DropboxServer::recieveFileProcedure(std::string filePath)
-{
-
-}
 
 int DropboxServer::run()
 {
@@ -31,7 +27,6 @@ int DropboxServer::run()
             clientsMutex.unlock();
             if (!sock.hasData())
             {
-                // nic nie wysyla
                 // TODO implement heartbeat protocol
                 continue;
             }
@@ -47,21 +42,13 @@ int DropboxServer::run()
             {
                 case NEW_CLIENT:
                     cout << "NEW CLIENT CONNECTED\n";
-
+                    newClientProcedure(sock);
                     break;
 
                 case NEW_FILE:
-                    // klient dodal plik, serwer go pobiera nastepnie wysyla do wszystkich innych
-                    cout << "NEW FILE FROM CLIENT\n";
-                    // klient wysyla rozmiar pliku
-                    IntType size;
-                    recieveInt(size);
-                    cout << "FILE SIZE: " << size << endl;
-                    // klient wysyla nazwe pliku
 
                     break;
                 case NEW_DIRECTORY:
-                    //
                     break;
                 case DELETE_FILE:
                     break;
@@ -73,7 +60,6 @@ int DropboxServer::run()
                     return 0;
                     break;
             }
-
         }
     }
 }
@@ -91,15 +77,45 @@ void DropboxServer::acceptClients()
 }
 
 DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, const std::string path)
-        : Dropbox(ip, port, path), newClient(false)
+        : Dropbox(ip, port, path), newClient(false), empty(true)
 {}
 
-void DropboxServer::newClientProcedure()
+/**
+ * Sprawdza czy są jakiekolwiek pliki do wysłania (empty):
+ *      NIE: nie dzieje się nic
+ *      TAK: serwer wysyła do klienta wszystkie pliki
+ * @param sock
+ */
+void DropboxServer::newClientProcedure(TcpSocket &sock)
 {
-    
+    if (empty)
+    {
+        return;
+    }
+
+    boost::filesystem::recursive_directory_iterator end; // domyślny konstruktor wskazuje na koniec
+    for (boost::filesystem::recursive_directory_iterator i(folderPath); i != end; i++)
+    {
+        boost::filesystem::path path = i->path();
+        if (boost::filesystem::is_regular_file(path))
+        {
+            // TODO sendRegularFile procedure
+        }
+        else if (boost::filesystem::is_directory(path))
+        {
+            // TODO send new directory
+        }
+    }
+}
+/**
+ * Serwer:
+ * 1. wysyła do klienta event NEW_FILE
+ * 2. wysyła do klienta nazwę pliku
+ * 3. wysyła do klienta rozmiar pliku
+ * @param sock
+ */
+void DropboxServer::sendFileProcedure(TcpSocket &sock)
+{
+   sock.
 }
 
-void DropboxServer::sendFileProcedure(std::string filePath)
-{
-
-}

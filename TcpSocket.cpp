@@ -122,7 +122,7 @@ void TcpSocket::sendFile(const std::string fileName)
     file.close();
 }
 
-void TcpSocket::recieveFile(const std::string fileName, size_t fileSize) // fileName jest sciezka do pliku
+void TcpSocket::receiveFile(const std::string fileName, size_t fileSize) // fileName jest sciezka do pliku
 {
     std::ofstream file(fileName, std::ios::binary | std::ios::out | std::ios::trunc);
     char buffer[CHUNK_SIZE];

@@ -9,7 +9,7 @@ set(CLIENT_SOURCE_FILES ${SOURCE_FILES} DropboxClient.cpp DropboxClient.h)
 # TODO add clientEventReporter after fixing
 set(TEST_SOURCE_FILES test/test.cpp ${SOURCE_FILES} ${SERVER_SOURCE_FILES} ${CLIENT_SOURCE_FILES})
 # test inotify
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)

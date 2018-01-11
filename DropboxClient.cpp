@@ -5,16 +5,6 @@
 #include <iostream>
 #include "DropboxClient.h"
 
-void DropboxClient::sendFileProcedure(std::string filePath)
-{
-
-}
-
-void DropboxClient::recieveFileProcedure(std::string filePath)
-{
-
-}
-
 
 DropboxClient::DropboxClient(const std::string &ip, const unsigned short port, const std::string folderPath)
         : Dropbox(ip, port, folderPath)
@@ -22,26 +12,18 @@ DropboxClient::DropboxClient(const std::string &ip, const unsigned short port, c
 
 int DropboxClient::run()
 {
-   newClientProcedure();
-}
+    newClientProcedure();
 
+}
+/**
+ * void DropboxClient::newClientProcedure()
+ * opis:
+ * 1. Klient wysyła do serwera event NEW_CLIENT
+ */
 void DropboxClient::newClientProcedure()
 {
+    const std::string errorDescription("newClientProcedure protocol error");
     sendEvent(Dropbox::NEW_CLIENT);
-    Dropbox::Event event;
-    recieveEvent(event);
-    if(event == Dropbox::NO_FILES)
-    {
-        return;
-    }
-    else if(event == Dropbox::NEW_FILES)
-    {
-        // odbieramy pliki
-    }
-    else
-    {
-        throw DropboxException("newClientProcedure protocol error");
-    }
+    Dropbox::Event tmp;
+    recieveEvent(tmp);
 }
-
-

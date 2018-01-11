@@ -20,10 +20,6 @@ private:
 
     void newClientProcedure();
 
-    void sendFileProcedure(std::string filePath) override;
-
-    void recieveFileProcedure(std::string filePath) override;
-
 };
 
 

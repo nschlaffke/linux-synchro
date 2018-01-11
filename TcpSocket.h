@@ -44,7 +44,7 @@ public:
 
     void closeSocket();
 
-    void recieveFile(const std::string fileName, size_t fileSize); // fileName jest sciezka do pliku
+    void receiveFile(const std::string fileName, size_t fileSize); // fileName jest sciezka do pliku
     void sendFile(const std::string fileName);
 
     void setNoBlock();
