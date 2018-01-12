@@ -17,6 +17,7 @@ void Dropbox::sendEvent(TcpSocket &sock, Dropbox::Event event)
         sent = sock.sendData(dataPointer, bytes);
         bytes -= sent;
     } while (bytes > 0);
+    totalSent += sent;
 }
 /*
 void Dropbox::sendEvent(Event data)
@@ -36,6 +37,7 @@ void Dropbox::recieveEvent(TcpSocket &sock, Dropbox::Event &data)
 
     } while (bytes - recieved > 0);
     data = static_cast<Event>(ntohl(dataToRecieve));
+    totalReceived += recieved;
 }
 /*
 void Dropbox::recieveEvent(Event &data)
@@ -61,6 +63,7 @@ void Dropbox::sendInt(TcpSocket &sock, Dropbox::IntType data)
         bytes -= sent;
         data += sent;
     } while (bytes > 0);
+    totalSent += sent;
 }
 
 void Dropbox::receiveInt(TcpSocket &sock, Dropbox::IntType &data)
@@ -75,6 +78,8 @@ void Dropbox::receiveInt(TcpSocket &sock, Dropbox::IntType &data)
 
     } while (bytes - recieved > 0);
     data = ntohl(dataToRecieve);
+    totalReceived += recieved;
+
 }
 /*
 void Dropbox::receiveInt(IntType &data)
@@ -93,9 +98,10 @@ void Dropbox::createDirectory(std::string directoryPath)
     }
 }
 
-Dropbox::Dropbox(std::string ip, int port, const std::string &folderPath) :
+Dropbox::Dropbox(const std::string &folderPath) :
         folderPath(folderPath),
-        maxStringSize(500) {}
+        maxStringSize(500), totalSent(0), totalReceived(0)
+{}
 
 void Dropbox::deleteFiles(std::string filePath)
 {
@@ -140,7 +146,7 @@ void Dropbox::sendString(TcpSocket &sock, std::string text)
         throw DropboxException("Dropbox::sendString error: too long string");
     }
     const char* pointer = text.c_str();
-    sock.sendData(pointer, textLen);
+    totalSent += sock.sendData(pointer, maxStringSize);
 }
 /*
 void Dropbox::receiveString(std::string &text)
@@ -151,7 +157,7 @@ void Dropbox::receiveString(std::string &text)
 void Dropbox::receiveString(TcpSocket &sock, std::string &text)
 {
     char buffer[maxStringSize];
-    sock.recieveData(buffer, maxStringSize);
+    totalReceived += sock.recieveData(buffer, maxStringSize);
     std::string tmp(buffer);
     text = tmp;
 }
@@ -163,7 +169,7 @@ void Dropbox::sendFile(const std::string fileName)
  */
 void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
 {
-    std::ifstream file(generateAbsolutPath(fileName), std::ios::binary | std::ios::in);
+    std::ifstream file(fileName, std::ios::binary | std::ios::in);
     if (!file.good())
     {
         throw DropboxException("Couldn't open file");
@@ -176,12 +182,12 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
         if (file.eof())
         {
             int size = std::min(int(fileSize) - CHUNK_SIZE * i, CHUNK_SIZE);
-            sock.sendData(buffer, size);
+            totalSent += sock.sendData(buffer, size);
             break;
         }
         else
         {
-            sock.sendData(buffer, CHUNK_SIZE);
+            totalSent += sock.sendData(buffer, CHUNK_SIZE);
         }
         file.seekg(CHUNK_SIZE, std::ios::cur);
     }
@@ -195,12 +201,25 @@ void Dropbox::receiveFile(const std::string fileName, size_t fileSize)
  */
 void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize) // fileName jest sciezka do pliku
 {
-    std::ofstream file(generateAbsolutPath(fileName), std::ios::binary | std::ios::out | std::ios::trunc);
+    std::ofstream file(fileName, std::ios::binary | std::ios::out | std::ios::trunc);
+    if(!file.good())
+    {
+        throw DropboxException("Error creating file");
+    }
     char buffer[CHUNK_SIZE];
-
+    
     for (int i = 0; CHUNK_SIZE * i <= fileSize; i++)
     {
-        size_t size = sock.recieveData(buffer, CHUNK_SIZE);
+        size_t size;
+        if(fileSize < CHUNK_SIZE)
+        {
+            size = sock.recieveData(buffer, fileSize);
+        }
+        else
+        {
+            size = sock.recieveData(buffer, CHUNK_SIZE);
+        }
+        totalReceived += size;
         file.write(buffer, size);
         file.seekp(size, std::ios::cur);
         if (size < CHUNK_SIZE)
@@ -224,7 +243,20 @@ std::string Dropbox::generateAbsolutPath(std::string pathToFile)
     return folderPath + pathToFile;
 }
 
+std::string Dropbox::generateRelativePath(std::string path)
+{
+    return path.erase(0, folderPath.length());
+}
 
+int Dropbox::getTotalSent()
+{
+    return totalSent;
+}
+
+int Dropbox::getTotalReceived() const
+{
+    return totalReceived;
+}
 
 
 

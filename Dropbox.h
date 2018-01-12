@@ -14,7 +14,7 @@ class Dropbox
 {
 public:
 
-    Dropbox(std::string ip, int port, const std::string &folderPath);
+    Dropbox(const std::string &folderPath);
 
     class DropboxException : public std::runtime_error
     {
@@ -24,7 +24,6 @@ public:
     };
 
     virtual int run() = 0;
-
 
 protected:
 
@@ -38,12 +37,11 @@ protected:
     {
         HEARTBEAT,
         NEW_CLIENT,
-        NEW_FILES,
         NEW_FILE,
         DELETE_FILE,
         MOVE_FILE,
         NEW_DIRECTORY,
-        NO_FILES
+        COPY_FILE
     };
 
     typedef uint32_t IntType;
@@ -81,7 +79,16 @@ protected:
 
     size_t getFileSize(const std::string fileName);
 
+public:
+    int getTotalReceived() const;
+
+protected:
+    std::string generateRelativePath(std::string path);
+
+    int getTotalSent();
 private:
+    int totalSent;
+    int totalReceived;
     const int maxStringSize;
 
 };
