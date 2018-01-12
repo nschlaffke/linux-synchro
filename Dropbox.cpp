@@ -176,20 +176,22 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
     }
     size_t fileSize = getFileSize(fileName);
     char buffer[CHUNK_SIZE];
-    for (int i = 0; CHUNK_SIZE * i <= fileSize; i++) // send file in chunks
+    int sent = 0;
+    for (int i = 0; CHUNK_SIZE * i < fileSize; i++) // send file in chunks
     {
         file.read(buffer, CHUNK_SIZE);
         if (file.eof())
         {
             int size = std::min(int(fileSize) - CHUNK_SIZE * i, CHUNK_SIZE);
-            totalSent += sock.sendData(buffer, size);
+            sent += sock.sendData(buffer, size);
             break;
         }
         else
         {
-            totalSent += sock.sendData(buffer, CHUNK_SIZE);
+            sent += sock.sendData(buffer, CHUNK_SIZE);
         }
         file.seekg(CHUNK_SIZE, std::ios::cur);
+        totalSent += sent;
     }
     file.close();
 }
@@ -207,8 +209,8 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
         throw DropboxException("Error creating file");
     }
     char buffer[CHUNK_SIZE];
-    
-    for (int i = 0; CHUNK_SIZE * i <= fileSize; i++)
+    int receivedHere = 0;
+    for (int i = 0; CHUNK_SIZE * i < fileSize; i++)
     {
         size_t size;
         if(fileSize < CHUNK_SIZE)
@@ -220,6 +222,7 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
             size = sock.recieveData(buffer, CHUNK_SIZE);
         }
         totalReceived += size;
+        receivedHere += size;
         file.write(buffer, size);
         file.seekp(size, std::ios::cur);
         if (size < CHUNK_SIZE)
