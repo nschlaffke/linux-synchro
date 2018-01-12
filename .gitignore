@@ -94,3 +94,18 @@ CTestTestfile.cmake
 *.app
 .idea/
 cmake-build-debug/
+ClientEventReporter.cpp
+DropboxClient.cpp
+DropboxClient.h
+DropboxServer.cpp
+TcpServer.cpp
+TcpSocket.cpp
+TcpSocket.h
+client.cpp
+server.cpp
+test/main.cpp
+test/server_folder/antylopa.cpp
+"test/server_folder/dupnik jest szalupny"
+test/server_folder/plik.txt
+test/test.cpp
+test/
