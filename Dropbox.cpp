@@ -210,26 +210,18 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
     }
     char buffer[CHUNK_SIZE];
     int receivedHere = 0;
-    for (int i = 0; CHUNK_SIZE * i < fileSize; i++)
+    int rest = fileSize % CHUNK_SIZE;
+    for (int i = 1; CHUNK_SIZE * i <= fileSize; i++)
     {
-        size_t size;
-        if(fileSize < CHUNK_SIZE)
-        {
-            size = sock.recieveData(buffer, fileSize);
-        }
-        else
-        {
-            size = sock.recieveData(buffer, CHUNK_SIZE);
-        }
+        size_t size = sock.recieveData(buffer, CHUNK_SIZE);
         totalReceived += size;
         receivedHere += size;
         file.write(buffer, size);
         file.seekp(size, std::ios::cur);
-        if (size < CHUNK_SIZE)
-        {
-            break;
-        }
     }
+    size_t size = sock.recieveData(buffer, rest);
+    totalReceived += size;
+    receivedHere += size;
     file.close();
 }
 
