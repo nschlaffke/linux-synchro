@@ -8,7 +8,7 @@
 #include "Dropbox.h"
 #include "TcpSocket.h"
 
-class DropboxClient : public Dropbox
+class DropboxClient : public Dropbox, public TcpSocket
 {
 public:
     DropboxClient(const std::string &ip, const unsigned short port, const std::string folderPath);
@@ -20,6 +20,11 @@ private:
 
     void newClientProcedure();
 
+    void sender();
+
+    void receiver();
+
+    void receiveNewFileProcedure();
 };
 
 

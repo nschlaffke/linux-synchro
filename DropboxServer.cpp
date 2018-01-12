@@ -32,7 +32,7 @@ int DropboxServer::run()
             }
             // pobieramy numerek zdarzenia
             Event tmp;
-            recieveEvent(tmp);
+            recieveEvent(sock, tmp);
             if (tmp < 0)
             {
                 cout << "ERROR: COULDN'T RECIEVE MESSAGE\n";
@@ -77,7 +77,7 @@ void DropboxServer::acceptClients()
 }
 
 DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, const std::string path)
-        : Dropbox(ip, port, path), newClient(false), empty(true)
+        : Dropbox(ip, port, path), newClient(false), empty(true), TcpServer(ip, port)
 {}
 
 /**
@@ -92,18 +92,17 @@ void DropboxServer::newClientProcedure(TcpSocket &sock)
     {
         return;
     }
-
     boost::filesystem::recursive_directory_iterator end; // domyślny konstruktor wskazuje na koniec
     for (boost::filesystem::recursive_directory_iterator i(folderPath); i != end; i++)
     {
         boost::filesystem::path path = i->path();
         if (boost::filesystem::is_regular_file(path))
         {
-            // TODO sendRegularFile procedure
+            sendFileProcedure(sock, path.c_str());
         }
         else if (boost::filesystem::is_directory(path))
         {
-            // TODO send new directory
+            sendDirectoryProcedure(sock, path.c_str());
         }
     }
 }
@@ -112,10 +111,27 @@ void DropboxServer::newClientProcedure(TcpSocket &sock)
  * 1. wysyła do klienta event NEW_FILE
  * 2. wysyła do klienta nazwę pliku
  * 3. wysyła do klienta rozmiar pliku
+ * 4. wysyła do klienta plik
  * @param sock
  */
-void DropboxServer::sendFileProcedure(TcpSocket &sock)
+void DropboxServer::sendFileProcedure(TcpSocket &sock, std::string filePath)
 {
-   sock.
+    sendEvent(sock, NEW_FILE);
+    sendString(sock, filePath);
+    IntType fileSize = getFileSize(filePath);
+    sendInt(sock, fileSize);
+    sendFile(sock, filePath);
+}
+/**
+ * Serwer:
+ * 1. wysyła do klienta event NEW_DIRECTORY
+ * 2. wysyła do klienta nazwę folderu
+ * @param sock
+ * @param directoryPath
+ */
+void DropboxServer::sendDirectoryProcedure(TcpSocket &sock, std::string directoryPath)
+{
+    sendEvent(sock, NEW_DIRECTORY);
+    sendString(sock, directoryPath);
 }
 

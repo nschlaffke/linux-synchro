@@ -10,9 +10,12 @@
 #include "TcpSocket.h"
 #include <boost/filesystem/path.hpp>
 
-class Dropbox : public virtual TcpSocket
+class Dropbox
 {
 public:
+
+    Dropbox(std::string ip, int port, const std::string &folderPath);
+
     class DropboxException : public std::runtime_error
     {
     public:
@@ -22,7 +25,6 @@ public:
 
     virtual int run() = 0;
 
-    Dropbox(const std::string &ip, const unsigned short port, const std::string &folderPath);
 
 protected:
 
@@ -46,27 +48,38 @@ protected:
 
     typedef uint32_t IntType;
 
-    void sendEvent(Event event);
+    //void sendEvent(Event event);
     void sendEvent(TcpSocket &sock, Event event);
 
-    void recieveEvent(Event &event);
+    //void recieveEvent(Event &event);
     void recieveEvent(TcpSocket &sock, Event &event);
 
-    void sendInt(IntType data);
+    //void sendInt(IntType data);
     void sendInt(TcpSocket &sock, IntType data);
-    
+
     void receiveInt(TcpSocket &sock, IntType &data);
-    void receiveInt(IntType &data);
+    //void receiveInt(IntType &data);
 
     boost::filesystem::path createPath(std::string path);
 
     void sendString(TcpSocket &sock, std::string text);
-    void sendString(std::string text);
+    //void sendString(std::string text);
 
-    void receiveString(std::string &text);
+    //void receiveString(std::string &text);
     void receiveString(TcpSocket &sock, std::string &text);
 
+
+    std::string generateAbsolutPath(std::string pathToFile);
+
+    void sendFile(TcpSocket &sock, std::string fileName);
+    //void sendFile(const std::string fileName);
+
+    void receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize);
+    //void receiveFile(const std::string fileName, size_t fileSize);
+
     const std::string folderPath;
+
+    size_t getFileSize(const std::string fileName);
 
 private:
     const int maxStringSize;

@@ -12,11 +12,9 @@ using namespace std;
 int main()
 {
 
-    using namespace boost::filesystem;
-    string directoryPath("/home/ns/Documents/Studia/semestr5/SK2/Dropbox");
-    boost::filesystem::path dir(directoryPath);
     const string ip = "192.168.8.105";
-    const int port = 8888;
-    DropboxClient dropboxClient(ip, port, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox");
+    const int port = 8800;
+    DropboxClient dropboxClient(ip, port, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client_folder");
+    dropboxClient.doConnect();
     dropboxClient.run();
 }

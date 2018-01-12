@@ -22,11 +22,12 @@ public:
 private:
     bool empty;
     void newClientProcedure(TcpSocket &sock);
-    void sendFileProcedure(TcpSocket &sock);
     std::mutex clientsMutex;
     std::atomic<bool> newClient;
     std::vector<TcpSocket> clients;
     void acceptClients();
+    void sendFileProcedure(TcpSocket &sock, std::string filePath);
+    void sendDirectoryProcedure(TcpSocket &sock, std::string directoryPath);
 };
 
 

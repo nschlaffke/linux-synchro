@@ -22,7 +22,6 @@
 class TcpSocket
 {
 public:
-    typedef uint32_t IntType;
     class SocketException : public std::runtime_error
     {
     public:
@@ -44,9 +43,6 @@ public:
 
     void closeSocket();
 
-    void receiveFile(const std::string fileName, size_t fileSize); // fileName jest sciezka do pliku
-    void sendFile(const std::string fileName);
-
     void setNoBlock();
 
     void setBlock();
@@ -55,9 +51,6 @@ public:
 
     TcpSocket(Descriptor tmp);
 
-    void recieveData(IntType &data);
-
-    void sendData(IntType data);
 
     size_t recieveData(char buffer[], const size_t bufferSize);
 
@@ -68,8 +61,6 @@ protected:
     sockaddr_in addr;
     Descriptor sock;
 private:
-    size_t getFileSize(const std::string fileName);
-
     bool connectionEstablished;
     std::string ipAddress;
     unsigned short int portNumber;

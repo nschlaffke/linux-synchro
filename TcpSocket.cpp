@@ -27,9 +27,6 @@ TcpSocket::TcpSocket(const std::string ip, const unsigned short port) :
     addr.sin_addr.s_addr = inet_addr(ipAddress.c_str());
 }
 
-TcpSocket::TcpSocket()
-{}
-
 void TcpSocket::doClose()
 {
     sock.doClose();
@@ -95,58 +92,9 @@ TcpSocket::~TcpSocket()
 }
 
 
-void TcpSocket::sendFile(const std::string fileName)
-{
-    std::ifstream file(fileName.c_str(), std::ios::binary | std::ios::in);
-    if (!file.good())
-    {
-        throw SocketException("Couldn't open file");
-    }
-    size_t fileSize = getFileSize(fileName);
-    char buffer[CHUNK_SIZE];
-    for (int i = 0; CHUNK_SIZE * i <= fileSize; i++) // send file in chunks
-    {
-        file.read(buffer, CHUNK_SIZE);
-        if (file.eof())
-        {
-            int size = std::min(int(fileSize) - CHUNK_SIZE * i, CHUNK_SIZE);
-            sendData(buffer, size);
-            break;
-        }
-        else
-        {
-            sendData(buffer, CHUNK_SIZE);
-        }
-        file.seekg(CHUNK_SIZE, std::ios::cur);
-    }
-    file.close();
-}
 
-void TcpSocket::receiveFile(const std::string fileName, size_t fileSize) // fileName jest sciezka do pliku
-{
-    std::ofstream file(fileName, std::ios::binary | std::ios::out | std::ios::trunc);
-    char buffer[CHUNK_SIZE];
 
-    for (int i = 0; CHUNK_SIZE * i <= fileSize; i++)
-    {
-        size_t size = recieveData(buffer, CHUNK_SIZE);
-        file.write(buffer, size);
-        file.seekp(size, std::ios::cur);
-        if (size < CHUNK_SIZE)
-        {
-            break;
-        }
-    }
-    file.close();
-}
 
-size_t TcpSocket::getFileSize(const std::string fileName)
-{
-    std::ifstream in(fileName.c_str(), std::ios::binary | std::ios::ate);
-    size_t size = in.tellg();
-    in.close();
-    return size;
-}
 
 TcpSocket::TcpSocket(Descriptor tmp) : sock(tmp), connectionEstablished(true)
 {}
@@ -193,34 +141,3 @@ bool TcpSocket::hasData()
         return false;
     }
 }
-// moved to Dropbox.cpp
-/*
-void TcpSocket::sendData(IntType data)
-{
-    IntType dataToSend = htonl(data);
-    int bytes = sizeof(dataToSend);
-    char *dataPointer = reinterpret_cast<char *>(&dataToSend);
-    int sent;
-    do
-    {
-        sent = sendData(dataPointer, bytes);
-        bytes -= sent;
-        data += sent;
-    }while(bytes > 0);
-}
-
-
-void TcpSocket::recieveData(IntType &data)
-{
-    IntType dataToRecieve;
-    int bytes = sizeof(dataToRecieve);
-    char *dataPointer = reinterpret_cast<char *>(&dataToRecieve);
-    int recieved = 0;
-    do
-    {
-       recieved += recieveData(dataPointer, bytes);
-
-    }while(bytes - recieved > 0);
-    data = ntohl(dataToRecieve);
-}
-*/

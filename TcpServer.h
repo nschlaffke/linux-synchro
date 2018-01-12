@@ -11,7 +11,7 @@
 #include <exception>
 #include "Descriptor.h"
 
-class TcpServer : public virtual TcpSocket
+class TcpServer : public TcpSocket
 {
 public:
     TcpServer();
@@ -22,9 +22,10 @@ public:
 
     TcpSocket doAccept();
 
+protected:
+    void doBind();
 private:
     void doListen(const unsigned int queueSize);
-    void doBind();
 };
 
 

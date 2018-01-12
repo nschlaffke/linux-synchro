@@ -24,9 +24,10 @@ int main(int argc, char *argv[])
     }
 #else
     const string ip = "192.168.8.105";
-    const short port = 8888;
+    const short port = 8800;
 #endif
-    DropboxServer dropboxServer(ip, port);
+    string path("/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/server_folder");
+    DropboxServer dropboxServer(ip, port, path);
     dropboxServer.run();
 }
 

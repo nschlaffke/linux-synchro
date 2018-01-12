@@ -6,6 +6,9 @@ const int DEFAULT_QUEUE_SIZE = 10;
 #include "TcpServer.h"
 #include "POSIXError.h"
 
+/*TcpServer::TcpServer()
+{}
+ */
 TcpServer::TcpServer(const std::string ip, const unsigned short port, const unsigned int queueSize)
         : TcpSocket(ip, port)
 {
@@ -61,7 +64,4 @@ void TcpServer::doBind()
         bound = true;
     }
 }
-
-TcpServer::TcpServer()
-{}
 
