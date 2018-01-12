@@ -7,6 +7,9 @@
 #include <boost/filesystem.hpp>
 #include "DropboxServer.h"
 
+DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, const std::string path)
+        : Dropbox(path), newClient(false), TcpServer(ip, port)
+{}
 
 int DropboxServer::run()
 {
@@ -22,42 +25,45 @@ int DropboxServer::run()
             newClient = false;
         }
         clientsMutex.unlock();
-        for (TcpSocket sock: clientsCopy)
+        for (TcpSocket client: clientsCopy)
         {
-            clientsMutex.unlock();
-            if (!sock.hasData())
+            if (!client.hasData())
             {
                 // TODO implement heartbeat protocol
                 continue;
             }
             // pobieramy numerek zdarzenia
             Event tmp;
-            recieveEvent(sock, tmp);
+            recieveEvent(client, tmp);
             if (tmp < 0)
             {
                 cout << "ERROR: COULDN'T RECIEVE MESSAGE\n";
                 return 0;
             }
+            string file, folder;
             switch (tmp)
             {
                 case NEW_CLIENT:
                     cout << "NEW CLIENT CONNECTED\n";
-                    newClientProcedure(sock);
+                    newClientProcedure(client);
                     break;
-
                 case NEW_FILE:
-
+                    file = receiveNewFileProcedure(client);
+                    cout << "NEW FILE: " << file << endl;
+                    broadcastFile(client, file);
                     break;
                 case NEW_DIRECTORY:
+                    folder = receiveNewDircetoryProcedure(client);
+                    cout << "NEW DIRECTORY: " << folder << endl;
+                    broadcastDirectory(client, folder);
                     break;
                 case DELETE_FILE:
                     break;
-
                 case MOVE_FILE:
                     break;
                 default:
                     cout << "UNKNOW MESSAGE: " << tmp << endl;
-                    return 0;
+                    throw DropboxException("Protocol error");
                     break;
             }
         }
@@ -75,11 +81,6 @@ void DropboxServer::acceptClients()
         clientsMutex.unlock();
     }
 }
-
-DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, const std::string path)
-        : Dropbox(ip, port, path), newClient(false), empty(true), TcpServer(ip, port)
-{}
-
 /**
  * Sprawdza czy są jakiekolwiek pliki do wysłania (empty):
  *      NIE: nie dzieje się nic
@@ -88,50 +89,51 @@ DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, c
  */
 void DropboxServer::newClientProcedure(TcpSocket &sock)
 {
-    if (empty)
-    {
-        return;
-    }
     boost::filesystem::recursive_directory_iterator end; // domyślny konstruktor wskazuje na koniec
     for (boost::filesystem::recursive_directory_iterator i(folderPath); i != end; i++)
     {
         boost::filesystem::path path = i->path();
         if (boost::filesystem::is_regular_file(path))
         {
-            sendFileProcedure(sock, path.c_str());
+            sendNewFileProcedure(sock, path.c_str());
         }
         else if (boost::filesystem::is_directory(path))
         {
-            sendDirectoryProcedure(sock, path.c_str());
+            sendNewDirectoryProcedure(sock, path.c_str());
         }
     }
 }
 /**
- * Serwer:
- * 1. wysyła do klienta event NEW_FILE
- * 2. wysyła do klienta nazwę pliku
- * 3. wysyła do klienta rozmiar pliku
- * 4. wysyła do klienta plik
- * @param sock
+ * wysyła plik do wszystkich klientów oprócz nadawcy
+ * @param sender
  */
-void DropboxServer::sendFileProcedure(TcpSocket &sock, std::string filePath)
+void DropboxServer::broadcastFile(TcpSocket &sender, std::string &path)
 {
-    sendEvent(sock, NEW_FILE);
-    sendString(sock, filePath);
-    IntType fileSize = getFileSize(filePath);
-    sendInt(sock, fileSize);
-    sendFile(sock, filePath);
+    clientsMutex.lock();
+    for(TcpSocket receiver : clients)
+    {
+        if(sender != receiver)
+        {
+            sendNewFileProcedure(receiver, generateAbsolutPath(path));
+        }
+    }
+    clientsMutex.unlock();
 }
+
 /**
- * Serwer:
- * 1. wysyła do klienta event NEW_DIRECTORY
- * 2. wysyła do klienta nazwę folderu
- * @param sock
- * @param directoryPath
+ * wysyła folder do wszystkich klientów oprócz nadawcy
+ * @param sender
  */
-void DropboxServer::sendDirectoryProcedure(TcpSocket &sock, std::string directoryPath)
+void DropboxServer::broadcastDirectory(TcpSocket &sender, std::string &path)
 {
-    sendEvent(sock, NEW_DIRECTORY);
-    sendString(sock, directoryPath);
+    clientsMutex.lock();
+    for(TcpSocket receiver : clients)
+    {
+        if(sender != receiver)
+        {
+            sendNewDirectoryProcedure(receiver, generateAbsolutPath(path));
+        }
+    }
+    clientsMutex.unlock();
 }
 

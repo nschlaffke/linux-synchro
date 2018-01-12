@@ -47,7 +47,7 @@ public:
 
     void setBlock();
 
-    bool hasData();
+    int hasData();
 
     TcpSocket(Descriptor tmp);
 
@@ -58,6 +58,12 @@ public:
 
 protected:
     bool bound;
+public:
+    bool operator==(const TcpSocket &rhs) const;
+
+    bool operator!=(const TcpSocket &rhs) const;
+
+protected:
     sockaddr_in addr;
     Descriptor sock;
 private:

@@ -48,4 +48,14 @@ void Descriptor::operator=(const Descriptor &rhs)
     isOpen = rhs.isOpen;
 }
 
+bool Descriptor::operator==(const Descriptor &rhs) const
+{
+    return fd == rhs.fd;
+}
+
+bool Descriptor::operator!=(const Descriptor &rhs) const
+{
+    return !(rhs == *this);
+}
+
 

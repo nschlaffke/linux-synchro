@@ -1,7 +1,7 @@
 //
 // Created by ns on 22.11.17.
 //
-const int DEFAULT_QUEUE_SIZE = 10;
+const int DEFAULT_QUEUE_SIZE = 10000;
 
 #include "TcpServer.h"
 #include "POSIXError.h"

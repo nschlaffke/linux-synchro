@@ -9,12 +9,24 @@
 
 using namespace std;
 
-int main()
+int main(int argc, const char *argv[])
 {
-
-    const string ip = "192.168.8.105";
-    const int port = 8800;
-    DropboxClient dropboxClient(ip, port, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client_folder");
+    string ip;
+    short port;
+    string path;
+    if(argc == 4)
+    {
+        ip = argv[1];
+        port = static_cast<short>(std::stoi(argv[2]));
+        path = argv[3];
+    }
+    else
+    {
+        ip = "127.0.0.1";
+        port = 8811;
+        path = "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client2_folder";
+    }
+    DropboxClient dropboxClient(ip, port, path);
     dropboxClient.doConnect();
     dropboxClient.run();
 }

@@ -5,6 +5,8 @@
 #ifndef DROPBOX_DROPBOXCLIENT_H
 #define DROPBOX_DROPBOXCLIENT_H
 
+#include <queue>
+#include <mutex>
 #include "Dropbox.h"
 #include "TcpSocket.h"
 
@@ -17,6 +19,16 @@ public:
 
 private:
 
+    struct EventMessage
+    {
+        Dropbox::Event event;
+        std::string path;
+    };
+
+    std::queue<EventMessage> messageQueue;
+    std::mutex messageQueueMutex;
+
+    TcpSocket &serverSocket;
 
     void newClientProcedure();
 
@@ -24,7 +36,6 @@ private:
 
     void receiver();
 
-    void receiveNewFileProcedure();
 };
 
 

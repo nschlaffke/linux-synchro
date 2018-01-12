@@ -79,6 +79,14 @@ protected:
 
     size_t getFileSize(const std::string fileName);
 
+    void sendNewFileProcedure(TcpSocket &sock, std::string filePath);
+
+    void sendNewDirectoryProcedure(TcpSocket &sock, std::string directoryPath);
+
+    std::string receiveNewFileProcedure(TcpSocket &serverSocket);
+
+    std::string receiveNewDircetoryProcedure(TcpSocket &serverSocket);
+
 public:
     int getTotalReceived() const;
 

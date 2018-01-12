@@ -1,3 +1,6 @@
+#include "DropboxClient.h"
+#include "DropboxServer.h"
+#include <thread>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -15,9 +18,9 @@ void Dropbox::sendEvent(TcpSocket &sock, Dropbox::Event event)
     do
     {
         sent = sock.sendData(dataPointer, bytes);
+        totalSent += sent;
         bytes -= sent;
     } while (bytes > 0);
-    totalSent += sent;
 }
 /*
 void Dropbox::sendEvent(Event data)
@@ -34,10 +37,10 @@ void Dropbox::recieveEvent(TcpSocket &sock, Dropbox::Event &data)
     do
     {
         recieved += sock.recieveData(dataPointer, bytes);
+        totalReceived += recieved;
 
     } while (bytes - recieved > 0);
     data = static_cast<Event>(ntohl(dataToRecieve));
-    totalReceived += recieved;
 }
 /*
 void Dropbox::recieveEvent(Event &data)
@@ -60,10 +63,10 @@ void Dropbox::sendInt(TcpSocket &sock, Dropbox::IntType data)
     do
     {
         sent = sock.sendData(dataPointer, bytes);
+        totalSent += sent;
         bytes -= sent;
         data += sent;
     } while (bytes > 0);
-    totalSent += sent;
 }
 
 void Dropbox::receiveInt(TcpSocket &sock, Dropbox::IntType &data)
@@ -75,10 +78,10 @@ void Dropbox::receiveInt(TcpSocket &sock, Dropbox::IntType &data)
     do
     {
         recieved += sock.recieveData(dataPointer, bytes);
+        totalReceived += recieved;
 
     } while (bytes - recieved > 0);
     data = ntohl(dataToRecieve);
-    totalReceived += recieved;
 
 }
 /*
@@ -87,10 +90,11 @@ void Dropbox::receiveInt(IntType &data)
     receiveInt(*this, data);
 }
 */
+
 void Dropbox::createDirectory(std::string directoryPath)
 {
-    boost::filesystem::path dir = createPath(directoryPath);
-    if (!boost::filesystem::create_directories(dir))
+    boost::filesystem::path dir = directoryPath;
+    if (!boost::filesystem::create_directory(dir))
     {
         std::string error("Failed to create folder: ");
         error += directoryPath;
@@ -176,23 +180,19 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
     }
     size_t fileSize = getFileSize(fileName);
     char buffer[CHUNK_SIZE];
+    int rest = fileSize % CHUNK_SIZE;
     int sent = 0;
-    for (int i = 0; CHUNK_SIZE * i < fileSize; i++) // send file in chunks
+    for (int i = 1; fileSize >= CHUNK_SIZE * i; i++)
     {
         file.read(buffer, CHUNK_SIZE);
-        if (file.eof())
-        {
-            int size = std::min(int(fileSize) - CHUNK_SIZE * i, CHUNK_SIZE);
-            sent += sock.sendData(buffer, size);
-            break;
-        }
-        else
-        {
-            sent += sock.sendData(buffer, CHUNK_SIZE);
-        }
+        sent += sock.sendData(buffer, CHUNK_SIZE);
         file.seekg(CHUNK_SIZE, std::ios::cur);
-        totalSent += sent;
     }
+    if(rest > 0)
+    {
+        sent += sock.sendData(buffer, rest);
+    }
+    totalSent += fileSize;
     file.close();
 }
 /*
@@ -209,19 +209,15 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
         throw DropboxException("Error creating file");
     }
     char buffer[CHUNK_SIZE];
-    int receivedHere = 0;
     int rest = fileSize % CHUNK_SIZE;
     for (int i = 1; CHUNK_SIZE * i <= fileSize; i++)
     {
         size_t size = sock.recieveData(buffer, CHUNK_SIZE);
-        totalReceived += size;
-        receivedHere += size;
         file.write(buffer, size);
         file.seekp(size, std::ios::cur);
     }
     size_t size = sock.recieveData(buffer, rest);
-    totalReceived += size;
-    receivedHere += size;
+    totalReceived += fileSize;
     file.close();
 }
 
@@ -254,4 +250,70 @@ int Dropbox::getTotalReceived() const
 }
 
 
+/**
+ * 1. wysyła event NEW_FILE
+ * 2. wysyła nazwę pliku
+ * 3. wysyła rozmiar pliku
+ * 4. wysyła plik
+ * @param sock
+ * @param filePath - ścieżka BEZWZGLĘDNA do pliku
+ */
+void Dropbox::sendNewFileProcedure(TcpSocket &sock, std::string filePath)
+{
+    sendEvent(sock, NEW_FILE);
+    std::__cxx11::string relativePath = generateRelativePath(filePath);
+    std::cout << "SEND FILE: " << relativePath << std::endl;
+    sendString(sock, relativePath);
+    IntType fileSize = getFileSize(filePath);
+    sendInt(sock, fileSize);
+    sendFile(sock, filePath);
+    std::cout << "R: " << getTotalReceived() << std::endl;
+    std::cout << "S: " << getTotalSent() << std::endl;
+}
 
+/**
+ * 1. wysyła event NEW_DIRECTORY
+ * 2. wysyła nazwę folderu
+ * @param sock
+ * @param directoryPath ścieżka BEZWZGLĘDNA do folderu
+ */
+void Dropbox::sendNewDirectoryProcedure(TcpSocket &sock, std::string directoryPath)
+{
+    sendEvent(sock, NEW_DIRECTORY);
+    std::__cxx11::string relativePath = generateRelativePath(directoryPath);
+    std::cout << "SEND DIRECTORY: " << relativePath << std::endl;
+    sendString(sock, relativePath);
+    std::cout << "R: " << getTotalReceived() << std::endl;
+    std::cout << "S: " << getTotalSent() << std::endl;
+}
+
+/**
+ * 1. odbiera nazwę pliku
+ * 2. odbiera rozmiar pliku
+ * 3. odbiera plik
+ */
+std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket)
+{
+    std::string fileName;
+    IntType size;
+    receiveString(serverSocket, fileName);
+    receiveInt(serverSocket, size);
+    receiveFile(serverSocket, generateAbsolutPath(fileName), size);
+    std::cout << "R: " << getTotalReceived() << std::endl;
+    std::cout << "S: " << getTotalSent() << std::endl;
+    return fileName;
+}
+
+/**
+ * 1. odbiera od serwera ścieżkę do folderu
+ * 2. tworzy folder
+ */
+std::string Dropbox::receiveNewDircetoryProcedure(TcpSocket &serverSocket)
+{
+    std::string folder;
+    receiveString(serverSocket, folder);
+    createDirectory(generateAbsolutPath(folder));
+    std::cout << "R: " << getTotalReceived() << std::endl;
+    std::cout << "S: " << getTotalSent() << std::endl;
+    return folder;
+}

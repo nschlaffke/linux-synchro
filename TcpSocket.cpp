@@ -92,10 +92,6 @@ TcpSocket::~TcpSocket()
 }
 
 
-
-
-
-
 TcpSocket::TcpSocket(Descriptor tmp) : sock(tmp), connectionEstablished(true)
 {}
 
@@ -128,16 +124,26 @@ void TcpSocket::setNoBlock()
 
 }
 
-bool TcpSocket::hasData()
+int TcpSocket::hasData()
 {
     int count;
     ioctl(sock.getVal(), FIONREAD, &count);
     if(count > 0 )
     {
-        return true;
+        return count;
     }
     else
     {
-        return false;
+        return 0;
     }
+}
+
+bool TcpSocket::operator==(const TcpSocket &rhs) const
+{
+    return sock == rhs.sock;
+}
+
+bool TcpSocket::operator!=(const TcpSocket &rhs) const
+{
+    return !(rhs == *this);
 }

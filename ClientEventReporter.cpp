@@ -133,7 +133,7 @@ void ClientEventReporter::handleNotification()
 
     Notifier newNotifier = Notifier()
             .watchPathRecursively(ClientEventReporter::observedDirectory)
-            .ignoreFileOnce("file")
+            uignoreFileOnce("file")
             .onEvents({Event::moved_to, Event::create, Event::modify}, requestCreation);
 
     Notifier attribNotifier = Notifier()

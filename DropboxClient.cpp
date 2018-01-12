@@ -1,23 +1,30 @@
 //
 // Created by ns on 10.01.18.
 //
-
+/// pole serverSocket to referencja na samego siebie; istnieje tylko po to, aby w funkcjach typy receiveFile nie pisać *this
 #include <iostream>
 #include <thread>
 #include "DropboxClient.h"
 
 
 DropboxClient::DropboxClient(const std::string &ip, const unsigned short port, const std::string folderPath)
-        : Dropbox(ip, port, folderPath), TcpSocket(ip, port)
+        : Dropbox(folderPath), TcpSocket(ip, port), serverSocket(*this)
 {}
 
 int DropboxClient::run()
 {
-    if(!isConnected())
+    if (!isConnected())
     {
         throw DropboxException("Error: Client not connected\n");
     }
     newClientProcedure();
+    // TODO usunac nastepujace linie, tylko do testow !!!!
+    ///
+    EventMessage mes = {Event::NEW_FILE, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client2_folder/file_from_client"};
+    EventMessage mes2 = {Event::NEW_DIRECTORY, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client2_folder/bolec"};
+    messageQueue.push(mes2);
+    messageQueue.push(mes);
+    ///
     std::thread s(&DropboxClient::sender, this);
     std::thread r(&DropboxClient::receiver, this);
     s.join();
@@ -33,51 +40,88 @@ void DropboxClient::newClientProcedure()
 {
     sendEvent(*this, Dropbox::NEW_CLIENT);
 }
-
+/**
+ * Funkcja (wątek) zczytujący wiadomości z kolejki messageQueue i wysyłająca je do serwera
+ * Wiadomości na kolejce umieszcza ClientEventReporter
+ */
 void DropboxClient::sender()
 {
-    // TODO PIOTR tutaj się będą działy cuda INOTIFYOWE
-    // fajnie by było jak byś drobny szablonik machnął, łatwiej mi będzię się wgryźć ;)
-}
-
-void DropboxClient::receiver()
-{
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
     while (true)
     {
-        Event event;
-        recieveEvent(*this, event);
+        while (messageQueue.empty()); // TODO może być tutaj konieczny muteks !!!!
+        messageQueueMutex.lock();
+
+        EventMessage eventMessage = messageQueue.front();
+        messageQueue.pop();
+
+        messageQueueMutex.unlock();
+
+        Event event = eventMessage.event;
+        std::string path = eventMessage.path;
+
         switch (event)
         {
-            case HEARTBEAT:
-                // TODO
-                break;
-            case NEW_FILES:
-                break;
             case NEW_FILE:
-                receiveNewFileProcedure();
+                std::cout << "NEW FILE: " << path << std::endl;
+                sendNewFileProcedure(serverSocket, path);
                 break;
             case DELETE_FILE:
+                // TODO sender DELETE_FILE
                 break;
             case MOVE_FILE:
+                // TODO sender MOVE_FILE
                 break;
             case NEW_DIRECTORY:
+                sendNewDirectoryProcedure(serverSocket, path);
                 break;
-            case NO_FILES:
+            case COPY_FILE:
+                // TODO sender COPY_FILE
                 break;
         }
     }
+#pragma clang diagnostic pop
 }
+
 /**
- * Klient:
- * 1. odbiera nazwę pliku
- * 2. odbiera rozmiar pliku
- * 3. odbiera plik
+ * Funkcja (wątek) odbierający wiadomości od serwera
  */
-void DropboxClient::receiveNewFileProcedure()
+void DropboxClient::receiver()
 {
-    std::string fileName;
-    IntType size;
-    receiveString(*this, fileName);
-    receiveInt(*this, size);
-    receiveFile(*this, generateAbsolutPath(fileName), size);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+    while (true)
+    {
+        Event event;
+        std::cout << "R: " << getTotalReceived() << std::endl;
+        std::cout << "S: " << getTotalSent() << std::endl;
+        recieveEvent(serverSocket, event);
+        switch (event)
+        {
+            case NEW_FILE:
+                std::cout << "NEW FILE\n";
+                receiveNewFileProcedure(serverSocket);
+                std::cout << "FILE RECIEVED\n";
+                break;
+            case DELETE_FILE:
+                // TODO receiver DELETE_FILE
+                break;
+            case MOVE_FILE:
+                // TODO receiver MOVE_FILE
+                break;
+            case NEW_DIRECTORY:
+                std::cout << "NEW DIRECTORY\n";
+                receiveNewDircetoryProcedure(serverSocket);
+                std::cout << "NEW DIRECTORY CREATED\n";
+                break;
+            case COPY_FILE:
+                // TODO receiver COPY_FILE
+                break;
+            default:
+                throw DropboxException("Protocol error");
+                break;
+        }
+    }
+#pragma clang diagnostic pop
 }
+

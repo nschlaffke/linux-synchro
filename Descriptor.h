@@ -18,6 +18,10 @@ public:
 
     void operator=(const Descriptor &rhs);
 
+    bool operator==(const Descriptor &rhs) const;
+
+    bool operator!=(const Descriptor &rhs) const;
+
     Descriptor();
     Descriptor(int s);
     void doClose();
