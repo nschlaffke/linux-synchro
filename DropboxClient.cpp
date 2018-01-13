@@ -6,7 +6,7 @@
 #include <thread>
 #include "DropboxClient.h"
 
-
+// TODO jeżeli sender umiera, receiver też musi umrzec -> conditional variable
 DropboxClient::DropboxClient(const std::string &ip, const unsigned short port, const std::string folderPath)
         : Dropbox(folderPath), TcpSocket(ip, port), serverSocket(*this)
 {}
@@ -20,10 +20,10 @@ int DropboxClient::run()
     newClientProcedure();
     // TODO usunac nastepujace linie, tylko do testow !!!!
     ///
-    EventMessage mes = {Event::NEW_FILE, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client2_folder/file_from_client"};
-    EventMessage mes2 = {Event::NEW_DIRECTORY, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client2_folder/bolec"};
-    messageQueue.push(mes2);
-    messageQueue.push(mes);
+    //EventMessage mes = {Event::NEW_FILE, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client2_folder/f_from_client"};
+    //EventMessage mes2 = {Event::NEW_DIRECTORY, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client_folder/d_from_client"};
+    //messageQueue.push(mes2);
+    //messageQueue.push(mes);
     ///
     std::thread s(&DropboxClient::sender, this);
     std::thread r(&DropboxClient::receiver, this);
@@ -49,7 +49,7 @@ void DropboxClient::sender()
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
     while (true)
     {
-        while (messageQueue.empty()); // TODO może być tutaj konieczny muteks !!!!
+        while (messageQueue.empty()); // TODO wyeliminować aktywne czekanie, std::conditional_variable - inotify niech budzi sendera
         messageQueueMutex.lock();
 
         EventMessage eventMessage = messageQueue.front();
@@ -59,12 +59,21 @@ void DropboxClient::sender()
 
         Event event = eventMessage.event;
         std::string path = eventMessage.path;
-
+        std::cout << "Sender:\n";
         switch (event)
         {
             case NEW_FILE:
-                std::cout << "NEW FILE: " << path << std::endl;
-                sendNewFileProcedure(serverSocket, path);
+                try
+                {
+                    std::cout << "NEW FILE: " << path << std::endl;
+                    sendNewFileProcedure(serverSocket, path, serverMutex);
+                }
+                catch (std::exception &e)
+                {
+                    std::cout << "NEW_FILE error: " << e.what()
+                              << "Terminating client\n";
+                    return;
+                }
                 break;
             case DELETE_FILE:
                 // TODO sender DELETE_FILE
@@ -73,7 +82,16 @@ void DropboxClient::sender()
                 // TODO sender MOVE_FILE
                 break;
             case NEW_DIRECTORY:
-                sendNewDirectoryProcedure(serverSocket, path);
+                try
+                {
+                    sendNewDirectoryProcedure(serverSocket, path, serverMutex);
+                }
+                catch (std::exception &e)
+                {
+                    std::cout << "NEW_DIRECTORY error: " << e.what()
+                              << "Terminating client\n";
+                    return;
+                }
                 break;
             case COPY_FILE:
                 // TODO sender COPY_FILE
@@ -96,12 +114,22 @@ void DropboxClient::receiver()
         std::cout << "R: " << getTotalReceived() << std::endl;
         std::cout << "S: " << getTotalSent() << std::endl;
         recieveEvent(serverSocket, event);
+        std::cout << "Receiver:\n";
         switch (event)
         {
             case NEW_FILE:
-                std::cout << "NEW FILE\n";
-                receiveNewFileProcedure(serverSocket);
-                std::cout << "FILE RECIEVED\n";
+                try
+                {
+                    std::cout << "NEW FILE\n";
+                    receiveNewFileProcedure(serverSocket, serverMutex);
+                    std::cout << "FILE RECIEVED\n";
+                }
+                catch (std::exception &e)
+                {
+                    std::cout << "NEW_DIRECTORY error: " << e.what()
+                              << "Terminating client\n";
+                    return;
+                }
                 break;
             case DELETE_FILE:
                 // TODO receiver DELETE_FILE
@@ -110,9 +138,18 @@ void DropboxClient::receiver()
                 // TODO receiver MOVE_FILE
                 break;
             case NEW_DIRECTORY:
-                std::cout << "NEW DIRECTORY\n";
-                receiveNewDircetoryProcedure(serverSocket);
-                std::cout << "NEW DIRECTORY CREATED\n";
+                try
+                {
+                    std::cout << "NEW DIRECTORY\n";
+                    receiveNewDircetoryProcedure(serverSocket, serverMutex);
+                    std::cout << "NEW DIRECTORY CREATED\n";
+                }
+                catch(std::exception &e)
+                {
+                    std::cout << "NEW_DIRECTORY error:\n" << e.what() << std::endl
+                              << "Terminating client\n";
+                    return;
+                }
                 break;
             case COPY_FILE:
                 // TODO receiver COPY_FILE

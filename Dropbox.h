@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include "TcpSocket.h"
 #include <boost/filesystem/path.hpp>
+#include <mutex>
 
 class Dropbox
 {
@@ -79,16 +80,16 @@ protected:
 
     size_t getFileSize(const std::string fileName);
 
-    void sendNewFileProcedure(TcpSocket &sock, std::string filePath);
 
-    void sendNewDirectoryProcedure(TcpSocket &sock, std::string directoryPath);
+    void sendNewDirectoryProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex);
 
-    std::string receiveNewFileProcedure(TcpSocket &serverSocket);
+    std::string receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
-    std::string receiveNewDircetoryProcedure(TcpSocket &serverSocket);
+    std::string receiveNewDircetoryProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
 public:
     int getTotalReceived() const;
+    void sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex);
 
 protected:
     std::string generateRelativePath(std::string path);

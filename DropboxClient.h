@@ -19,6 +19,8 @@ public:
 
 private:
 
+    std::mutex serverMutex;
+
     struct EventMessage
     {
         Dropbox::Event event;

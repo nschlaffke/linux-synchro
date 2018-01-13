@@ -11,6 +11,7 @@
 #include <vector>
 #include "Dropbox.h"
 #include "TcpServer.h"
+#include "SocketWithMutex.h"
 
 class DropboxServer : public Dropbox, public TcpServer
 {
@@ -20,15 +21,16 @@ public:
     int run();
 
 private:
-    void newClientProcedure(TcpSocket &sock);
+    const int maxClientsNumber;
+    void newClientProcedure(TcpSocket &sock, std::mutex &clientMutex);
     std::mutex clientsMutex;
-    std::atomic<bool> newClient;
-    std::vector<TcpSocket> clients;
-    void acceptClients();
+    std::vector<SocketWithMutex> clients;
 
-    void broadcastFile(TcpSocket &sender, std::string &path);
+    void broadcastFile(TcpSocket sender, std::string path, std::mutex &clientMutex);
 
-    void broadcastDirectory(TcpSocket &sender, std::string &path);
+    void broadcastDirectory(TcpSocket &sender, std::string &path, std::mutex &clientMutex);
+
+    void clientReceiver(TcpSocket client, std::mutex &clientMutex);
 };
 
 

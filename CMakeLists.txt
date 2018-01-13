@@ -3,7 +3,7 @@ project(Dropbox)
 
 set(SOURCE_FILES TcpSocket.cpp TcpServer.cpp Descriptor.cpp POSIXError.cpp POSIXError.h
         InotifyInterface/Inotify.cpp InotifyInterface/Notifier.cpp InotifyInterface/EventType.cpp
-        Dropbox.h Dropbox.cpp)
+        Dropbox.h Dropbox.cpp SocketWithMutex.h)
 set(SERVER_SOURCE_FILES ${SOURCE_FILES} DropboxServer.cpp DropboxServer.h)
 set(CLIENT_SOURCE_FILES ${SOURCE_FILES} DropboxClient.cpp DropboxClient.h)
 # TODO add clientEventReporter after fixing
