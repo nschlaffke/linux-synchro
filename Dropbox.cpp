@@ -20,6 +20,7 @@ void Dropbox::sendEvent(TcpSocket &sock, Dropbox::Event event)
         sent = sock.sendData(dataPointer, bytes);
         totalSent += sent;
         bytes -= sent;
+        dataPointer += sent;
     } while (bytes > 0);
 }
 /*
@@ -38,6 +39,7 @@ void Dropbox::recieveEvent(TcpSocket &sock, Dropbox::Event &data)
     {
         recieved += sock.recieveData(dataPointer, bytes);
         totalReceived += recieved;
+        dataPointer += recieved;
 
     } while (bytes - recieved > 0);
     data = static_cast<Event>(ntohl(dataToRecieve));
@@ -66,6 +68,7 @@ void Dropbox::sendInt(TcpSocket &sock, Dropbox::IntType data)
         totalSent += sent;
         bytes -= sent;
         data += sent;
+        dataPointer += sent;
     } while (bytes > 0);
 }
 
@@ -79,6 +82,7 @@ void Dropbox::receiveInt(TcpSocket &sock, Dropbox::IntType &data)
     {
         recieved += sock.recieveData(dataPointer, bytes);
         totalReceived += recieved;
+        dataPointer += recieved;
 
     } while (bytes - recieved > 0);
     data = ntohl(dataToRecieve);
