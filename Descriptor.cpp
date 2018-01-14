@@ -26,14 +26,7 @@ void Descriptor::doClose()
 
 bool Descriptor::isValid()
 {
-   if(fd != -1)
-   {
-       return true;
-   }
-   else
-   {
-       return false;
-   }
+   return (fd != -1);
 }
 
 Descriptor::Descriptor(const Descriptor &d)
