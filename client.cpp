@@ -25,7 +25,7 @@ int main(int argc, const char *argv[])
     {
         ip = "127.0.0.1";
         port = 8811;
-        path = "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client_folder";
+        path = "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder";
     }
     DropboxClient dropboxClient(ip, port, path);
     try

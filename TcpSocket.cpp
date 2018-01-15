@@ -32,7 +32,8 @@ void TcpSocket::doClose()
     sock.doClose();
 }
 
-
+TcpSocket::TcpSocket()
+{}
 void TcpSocket::doConnect()
 {
     if (connectionEstablished)

@@ -11,7 +11,8 @@
 #include <vector>
 #include "Dropbox.h"
 #include "TcpServer.h"
-#include "SocketWithMutex.h"
+#include "SafeQueue.h"
+#include "TcpSocket.h"
 
 class DropboxServer : public Dropbox, public TcpServer
 {
@@ -21,17 +22,26 @@ public:
     int run();
 
 private:
+    struct ClientData;
     const int maxClientsNumber;
-    void newClientProcedure(TcpSocket &sock, std::mutex &clientMutex);
+    std::vector<std::reference_wrapper<ClientData> > clients;
+    SafeQueue<EventMessage> broadcasterQueue;
+    void newClientProcedure(ClientData &clientData);
     std::mutex clientsMutex;
-    std::vector<SocketWithMutex> clients;
-
     void broadcastFile(TcpSocket sender, std::string path, std::mutex &clientMutex);
 
     void broadcastDirectory(TcpSocket &sender, std::string &path, std::mutex &clientMutex);
+    std::vector<ClientData>::iterator clientVectorIterator;
+    void clientReceiver(ClientData &clientData);
 
-    void clientReceiver(TcpSocket client, std::mutex &clientMutex);
+    void clientSender(ClientData &clientData);
 };
 
 
+struct DropboxServer::ClientData
+{
+    std::mutex sockMutex;
+    TcpSocket sock;
+    SafeQueue<Dropbox::EventMessage> safeQueue;
+};
 #endif //DROPBOX_DROPBOXSERVER_H

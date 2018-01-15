@@ -10,6 +10,7 @@
 #include "TcpSocket.h"
 #include <boost/filesystem/path.hpp>
 #include <mutex>
+#include <queue>
 
 class Dropbox
 {
@@ -87,6 +88,13 @@ protected:
 
     std::string receiveNewDircetoryProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
+    struct EventMessage
+    {
+        Event event;
+        std::string source;
+        std::string destination;
+        TcpSocket sender;
+    };
 public:
     int getTotalReceived() const;
     void sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex);

@@ -20,10 +20,10 @@ int DropboxClient::run()
     newClientProcedure();
     // TODO usunac nastepujace linie, tylko do testow !!!!
     ///
-    //EventMessage mes = {Event::NEW_FILE, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client2_folder/f_from_client"};
-    //EventMessage mes2 = {Event::NEW_DIRECTORY, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client_folder/d_from_client"};
-    //messageQueue.push(mes2);
-    //messageQueue.push(mes);
+    EventMessage mes = {Event::NEW_FILE, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder/client3_file"};
+    EventMessage mes2 = {Event::NEW_DIRECTORY, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder/d"};
+    messageQueue.push(mes2);
+    messageQueue.push(mes);
     ///
     std::thread s(&DropboxClient::sender, this);
     std::thread r(&DropboxClient::receiver, this);
@@ -58,7 +58,7 @@ void DropboxClient::sender()
         messageQueueMutex.unlock();
 
         Event event = eventMessage.event;
-        std::string path = eventMessage.path;
+        std::string path = eventMessage.source;
         std::cout << "Sender:\n";
         switch (event)
         {

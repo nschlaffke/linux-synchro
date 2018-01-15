@@ -302,6 +302,7 @@ void Dropbox::sendNewDirectoryProcedure(TcpSocket sock, std::string directoryPat
  */
 std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
 {
+
     clientMutex.lock();
     std::string fileName;
     IntType size;

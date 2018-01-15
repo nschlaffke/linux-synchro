@@ -9,25 +9,78 @@
 
 DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, const std::string path)
         : Dropbox(path), TcpServer(ip, port), maxClientsNumber(10)
-{
-   clients.reserve(maxClientsNumber);
-}
+{}
 
 
 int DropboxServer::run()
 {
-    std::vector<std::mutex> mutexVector(maxClientsNumber);
-    std::vector<std::mutex>::iterator mutexVectorIterator = mutexVector.begin();
+    std::vector<ClientData> clientVector(maxClientsNumber);
+    clientVectorIterator = clientVector.begin();
     while (true)
     {
         TcpSocket tmp = doAccept();
-        std::thread t(&DropboxServer::clientReceiver, this, tmp, std::ref(*mutexVectorIterator));
-        mutexVectorIterator++;
-        t.detach();
+        clientVectorIterator++;
+        clientVectorIterator->sock = tmp;
+        std::thread receiver(&DropboxServer::clientReceiver, this, std::ref(*clientVectorIterator));
+        std::thread sender(&DropboxServer::clientSender, this, std::ref(*clientVectorIterator));
+        receiver.detach();
+        sender.detach();
     }
 }
-void DropboxServer::clientReceiver(TcpSocket client, std::mutex &clientMutex)
+void DropboxServer::clientSender(ClientData &clientData)
 {
+    using namespace std;
+    TcpSocket client = clientData.sock;
+    std::mutex &clientMutex = clientData.sockMutex;
+    SafeQueue<EventMessage> &queue = clientData.safeQueue;
+    while(true)
+    {
+        EventMessage message = queue.dequeue(); // tutaj usypia
+        Dropbox::Event event = message.event;
+        string file, folder;
+        switch (event)
+        {
+            case NEW_FILE:
+                try
+                {
+                    cout << "SENDING NEW FILE: " << file << endl;
+                    sendNewFileProcedure(client, generateAbsolutPath(message.source), clientMutex);
+                }
+                catch (std::exception &a)
+                {
+                    cout << "NEW_FILE error\nTerminating clientReceiver: " << a.what();
+                    return;
+                }
+                break;
+            case NEW_DIRECTORY:
+                try
+                {
+                    cout << "SENDING NEW DIRECTORY: " << folder << endl;
+                    sendNewDirectoryProcedure(client, generateAbsolutPath(message.source), clientMutex);
+                }
+                catch (std::exception &a)
+                {
+                    cout << "NEW_DIRECTORY error\nTerminating clientReceiver: " << a.what();
+                    return;
+                }
+                break;
+            case DELETE_FILE:
+                // TODO
+                break;
+            case MOVE_FILE:
+                // TODO
+                break;
+            default:
+                cout << "PROTOCOL error\n Terminating clientReceiver\n";
+                return;
+                break;
+        }
+    }
+}
+void DropboxServer::clientReceiver(ClientData &clientData)
+{
+    TcpSocket client = clientData.sock;
+    std::mutex &clientMutex = clientData.sockMutex;
     while(true)
     {
         using namespace std;
@@ -36,7 +89,7 @@ void DropboxServer::clientReceiver(TcpSocket client, std::mutex &clientMutex)
         {
             recieveEvent(client, tmp); /// tutaj usypia
         }
-        catch(std::exception a)
+        catch(std::exception &a)
         {
             cout << "Terminating clientReceiver: " << a.what();
             return;
@@ -48,11 +101,10 @@ void DropboxServer::clientReceiver(TcpSocket client, std::mutex &clientMutex)
                 cout << "NEW CLIENT CONNECTED\n";
                 try
                 {
-                    newClientProcedure(client, clientMutex);
+                    newClientProcedure(clientData);
                 }
                 catch (std::exception &a)
                 {
-
                     cout << "NEW_CLIENT error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
@@ -60,9 +112,9 @@ void DropboxServer::clientReceiver(TcpSocket client, std::mutex &clientMutex)
             case NEW_FILE:
                 try
                 {
-                    file = receiveNewFileProcedure(client, clientMutex);
+                    file = receiveNewFileProcedure(client, clientData.sockMutex);
                     cout << "NEW FILE: " << file << endl;
-                    broadcastFile(client, file, clientMutex);
+                    broadcastFile(client, file, clientData.sockMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -73,13 +125,12 @@ void DropboxServer::clientReceiver(TcpSocket client, std::mutex &clientMutex)
             case NEW_DIRECTORY:
                 try
                 {
-                    folder = receiveNewDircetoryProcedure(client, clientMutex);
+                    folder = receiveNewDircetoryProcedure(client, clientData.sockMutex);
                     cout << "NEW_DIRECTORY: " << folder << endl;
-                    broadcastDirectory(client, folder, clientMutex);
+                    broadcastDirectory(client, folder, clientData.sockMutex);
                 }
                 catch (std::exception &a)
                 {
-
                     cout << "NEW_DIRECTORY error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
@@ -104,9 +155,10 @@ void DropboxServer::clientReceiver(TcpSocket client, std::mutex &clientMutex)
  *      TAK: serwer wysyła do klienta wszystkie pliki
  * @param sock
  */
-void DropboxServer::newClientProcedure(TcpSocket &sock, std::mutex &clientMutex)
+void DropboxServer::newClientProcedure(ClientData &clientData)
 {
-    SocketWithMutex a = {clientMutex, sock};
+    TcpSocket &sock = clientData.sock;
+    std::mutex &clientMutex = clientData.sockMutex;
     boost::filesystem::recursive_directory_iterator end; // domyślny konstruktor wskazuje na koniec
     for (boost::filesystem::recursive_directory_iterator i(folderPath); i != end; i++)
     {
@@ -124,7 +176,7 @@ void DropboxServer::newClientProcedure(TcpSocket &sock, std::mutex &clientMutex)
     // zanim plik zostanie broadcastowany jest juz w systemie plikow serwera, wiec zostanie wyslany w tej procedurze,
     // a nie chcemy by zostal wyslany 2 razy
     clientsMutex.lock();
-    clients.push_back(a);
+    clients.push_back(std::ref(clientData));
     clientsMutex.unlock();
     //
 }
@@ -135,15 +187,18 @@ void DropboxServer::newClientProcedure(TcpSocket &sock, std::mutex &clientMutex)
 void DropboxServer::broadcastFile(TcpSocket sender, std::string path, std::mutex &clientMutex)
 {
     clientsMutex.lock();
-    std::vector<SocketWithMutex> clientsCopy = clients;
+    std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for(SocketWithMutex pair: clientsCopy)
+    for(ClientData &clientData: clientsCopy)
     {
-        TcpSocket receiver = pair.sock;
+        TcpSocket receiver = clientData.sock;
         if(sender != receiver)
         {
-            std::thread t(&DropboxServer::sendNewFileProcedure, this, receiver, generateAbsolutPath(path), std::ref(clientMutex));
-            t.detach();
+            EventMessage tmp;
+            tmp.event = Dropbox::Event::NEW_FILE;
+            tmp.source = path;
+            tmp.sender = sender;
+            clientData.safeQueue.enqueue(tmp);
         }
     }
 }
@@ -155,16 +210,23 @@ void DropboxServer::broadcastFile(TcpSocket sender, std::string path, std::mutex
 void DropboxServer::broadcastDirectory(TcpSocket &sender, std::string &path, std::mutex &clientMutex)
 {
     clientsMutex.lock();
-    std::vector<SocketWithMutex> clientsCopy = clients;
+    std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for(SocketWithMutex pair: clients)
+    for(ClientData &clientData: clients)
     {
-        TcpSocket receiver = pair.sock;
+        TcpSocket receiver = clientData.sock;
         if(sender != receiver)
         {
+            /*
             std::thread t(&DropboxServer::sendNewDirectoryProcedure, this, receiver,
                           generateAbsolutPath(path), std::ref(clientMutex));
             t.detach();
+             */
+            EventMessage tmp;
+            tmp.event = NEW_DIRECTORY;
+            tmp.source = path;
+            tmp.sender = sender;
+            clientData.safeQueue.enqueue(tmp);
         }
     }
 }
