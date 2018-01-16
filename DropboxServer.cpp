@@ -36,7 +36,7 @@ void DropboxServer::clientSender(ClientData &clientData)
     while(true)
     {
         EventMessage message = queue.dequeue(); // tutaj usypia
-        Dropbox::Event event = message.event;
+        ProtocolEvent event = message.event;
         string file, folder;
         switch (event)
         {
@@ -84,10 +84,10 @@ void DropboxServer::clientReceiver(ClientData &clientData)
     while(true)
     {
         using namespace std;
-        Event tmp;
+        ProtocolEvent tmp;
         try
         {
-            recieveEvent(client, tmp); /// tutaj usypia
+            receiveEvent(client, tmp); /// tutaj usypia
         }
         catch(std::exception &a)
         {
@@ -195,7 +195,7 @@ void DropboxServer::broadcastFile(TcpSocket sender, std::string path, std::mutex
         if(sender != receiver)
         {
             EventMessage tmp;
-            tmp.event = Dropbox::Event::NEW_FILE;
+            tmp.event = NEW_FILE;
             tmp.source = path;
             tmp.sender = sender;
             clientData.safeQueue.enqueue(tmp);

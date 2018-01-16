@@ -52,7 +52,7 @@ public:
     TcpSocket(Descriptor tmp);
 
 
-    size_t recieveData(char buffer[], const size_t bufferSize);
+    size_t receiveData(char buffer[], const size_t bufferSize);
 
     size_t sendData(const char data[], const size_t size);
 

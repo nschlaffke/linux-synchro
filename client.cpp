@@ -13,20 +13,21 @@ using namespace std;
 int main(int argc, const char *argv[])
 {
     string ip;
-    short port;
+    unsigned short port;
     string path;
     if(argc == 4)
     {
         ip = argv[1];
-        port = static_cast<short>(std::stoi(argv[2]));
+        port = static_cast<unsigned short>(std::stoi(argv[2]));
         path = argv[3];
     }
     else
     {
         ip = "127.0.0.1";
-        port = 8811;
-        path = "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder";
+        port = 8002;
+        path = "/home/piotr/Desktop/Dropbox/__test__";
     }
+
     DropboxClient dropboxClient(ip, port, path);
     try
     {

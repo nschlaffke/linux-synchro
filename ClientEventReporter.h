@@ -6,7 +6,8 @@
 #define DROPBOX_CLIENTEVENTREPORTER_H
 
 #include "InotifyInterface/Notifier.h"
-#include "TcpServer.h"
+#include "ProtocolEvent.h"
+#include "SafeQueue.h"
 
 #include <iostream>
 #include <string>
@@ -17,29 +18,22 @@ using namespace inotify;
 
 class ClientEventReporter
 {
-    static boost::filesystem::path observedDirectory;
-    static TcpServer serverSocket;
-    static vector <boost::filesystem::path> allFilePaths;
+    boost::filesystem::path observedDirectory;
 
     static char* convertToCharArray(string path);
     vector <boost::filesystem::path> collectFilePaths(boost::filesystem::path dir);
 
 public:
 
-    ClientEventReporter(boost::filesystem::path observedDirectory, TcpServer serverSocket);
-    boost::filesystem::path getObservedDirectory();
-    void setObservedDirectory(boost::filesystem::path observedDirectory);
-    TcpServer getServerSocket();
-    void setServerSocket(TcpServer serverSocket);
-    static void requestOnly(Notification notification);
+    static vector <boost::filesystem::path> allFilePaths;
+    static SafeQueue<EventMessage> messageQueue;
+
+    ClientEventReporter(boost::filesystem::path observedDirectory);
+    static void makeRequest(Notification notification, ProtocolEvent protocolEvent);
     static void requestCreation(Notification notificationTo);
-    static void requestIfCreated(Notification notification);
+    static void requestDeletion(Notification notification);
+    static void requestCopying(Notification notification);
     void handleNotification();
-
-    /*
-     TODO: Implement methods responsible for receiving and handling messeges from server
-     */
-
 };
 
 #endif //DROPBOX_CLIENTEVENTREPORTER_H

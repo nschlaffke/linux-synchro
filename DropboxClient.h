@@ -5,10 +5,11 @@
 #ifndef DROPBOX_DROPBOXCLIENT_H
 #define DROPBOX_DROPBOXCLIENT_H
 
-#include <queue>
-#include <mutex>
 #include "Dropbox.h"
 #include "TcpSocket.h"
+#include "ClientEventReporter.h"
+#include "SafeQueue.h"
+#include <mutex>
 
 class DropboxClient : public Dropbox, public TcpSocket
 {
@@ -20,10 +21,8 @@ private:
 
     std::mutex serverMutex;
 
-    std::queue<EventMessage> messageQueue;
-    std::mutex messageQueueMutex;
-
     TcpSocket &serverSocket;
+    ClientEventReporter eventReporter;
 
     void newClientProcedure();
 

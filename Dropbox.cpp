@@ -9,9 +9,9 @@
 //
 // Created by ns on 10.01.18.
 
-void Dropbox::sendEvent(TcpSocket &sock, Dropbox::Event event)
+void Dropbox::sendEvent(TcpSocket &sock, ProtocolEvent event)
 {
-    Event dataToSend = static_cast<Event>(htonl(event));
+    ProtocolEvent dataToSend = static_cast<ProtocolEvent>(htonl(event));
     int bytes = sizeof(dataToSend);
     char *dataPointer = reinterpret_cast<char *>(&dataToSend);
     int sent;
@@ -24,30 +24,32 @@ void Dropbox::sendEvent(TcpSocket &sock, Dropbox::Event event)
     } while (bytes > 0);
 }
 /*
-void Dropbox::sendEvent(Event data)
+void Dropbox::sendEvent(ProtocolEvent data)
 {
     sendEvent(*this, data);
 }
 */
-void Dropbox::recieveEvent(TcpSocket &sock, Dropbox::Event &data)
+void Dropbox::receiveEvent(TcpSocket &sock, ProtocolEvent &data)
 {
-    Event dataToRecieve;
-    int bytes = sizeof(dataToRecieve);
-    char *dataPointer = reinterpret_cast<char *>(&dataToRecieve);
-    int recieved = 0;
+    ProtocolEvent dataToreceive;
+    int bytes = sizeof(dataToreceive);
+    char *dataPointer = reinterpret_cast<char *>(&dataToreceive);
+    int received = 0;
     do
     {
-        recieved += sock.recieveData(dataPointer, bytes);
-        totalReceived += recieved;
-        dataPointer += recieved;
+        received += sock.receiveData(dataPointer, bytes);
+        totalReceived += received;
+        dataPointer += received;
+        received += sock.receiveData(dataPointer, bytes);
+        totalReceived += received;
 
-    } while (bytes - recieved > 0);
-    data = static_cast<Event>(ntohl(dataToRecieve));
+    } while (bytes - received > 0);
+    data = static_cast<ProtocolEvent>(ntohl(dataToreceive));
 }
 /*
-void Dropbox::recieveEvent(Event &data)
+void Dropbox::receiveEvent(ProtocolEvent &data)
 {
-   recieveEvent(*this, data) ;
+   receiveEvent(*this, data) ;
 }
 */
 /*
@@ -74,18 +76,18 @@ void Dropbox::sendInt(TcpSocket &sock, Dropbox::IntType data)
 
 void Dropbox::receiveInt(TcpSocket &sock, Dropbox::IntType &data)
 {
-    IntType dataToRecieve;
-    int bytes = sizeof(dataToRecieve);
-    char *dataPointer = reinterpret_cast<char *>(&dataToRecieve);
-    int recieved = 0;
+    IntType dataToreceive;
+    int bytes = sizeof(dataToreceive);
+    char *dataPointer = reinterpret_cast<char *>(&dataToreceive);
+    int received = 0;
     do
     {
-        recieved += sock.recieveData(dataPointer, bytes);
-        totalReceived += recieved;
-        dataPointer += recieved;
+        received += sock.receiveData(dataPointer, bytes);
+        totalReceived += received;
+        dataPointer += received;
 
-    } while (bytes - recieved > 0);
-    data = ntohl(dataToRecieve);
+    } while (bytes - received > 0);
+    data = ntohl(dataToreceive);
 
 }
 /*
@@ -165,7 +167,7 @@ void Dropbox::receiveString(std::string &text)
 void Dropbox::receiveString(TcpSocket &sock, std::string &text)
 {
     char buffer[maxStringSize];
-    totalReceived += sock.recieveData(buffer, maxStringSize);
+    totalReceived += sock.receiveData(buffer, maxStringSize);
     std::string tmp(buffer);
     text = tmp;
 }
@@ -216,11 +218,11 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
     int rest = fileSize % CHUNK_SIZE;
     for (int i = 1; CHUNK_SIZE * i <= fileSize; i++)
     {
-        size_t size = sock.recieveData(buffer, CHUNK_SIZE);
+        size_t size = sock.receiveData(buffer, CHUNK_SIZE);
         file.write(buffer, size);
         file.seekp(size, std::ios::cur);
     }
-    size_t size = sock.recieveData(buffer, rest);
+    size_t size = sock.receiveData(buffer, rest);
     totalReceived += fileSize;
     file.close();
 }

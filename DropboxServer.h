@@ -42,6 +42,6 @@ struct DropboxServer::ClientData
 {
     std::mutex sockMutex;
     TcpSocket sock;
-    SafeQueue<Dropbox::EventMessage> safeQueue;
+    SafeQueue<EventMessage> safeQueue;
 };
 #endif //DROPBOX_DROPBOXSERVER_H

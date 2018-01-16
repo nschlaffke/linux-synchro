@@ -62,7 +62,7 @@ void TcpSocket::closeSocket()
     close(sock.getVal());
 }
 
-size_t TcpSocket::recieveData(char *buffer, size_t bufferSize)
+size_t TcpSocket::receiveData(char *buffer, size_t bufferSize)
 {
     if (!connectionEstablished)
     {

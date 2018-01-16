@@ -7,8 +7,8 @@
 #include "DropboxClient.h"
 
 // TODO jeżeli sender umiera, receiver też musi umrzec -> conditional variable
-DropboxClient::DropboxClient(const std::string &ip, const unsigned short port, const std::string folderPath)
-        : Dropbox(folderPath), TcpSocket(ip, port), serverSocket(*this)
+DropboxClient::DropboxClient(const std::string &ip, unsigned short port, const std::string folderPath)
+        : Dropbox(folderPath), TcpSocket(ip, port), serverSocket(*this), eventReporter(folderPath)
 {}
 
 int DropboxClient::run()
@@ -20,10 +20,10 @@ int DropboxClient::run()
     newClientProcedure();
     // TODO usunac nastepujace linie, tylko do testow !!!!
     ///
-    EventMessage mes = {Event::NEW_FILE, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder/client3_file"};
-    EventMessage mes2 = {Event::NEW_DIRECTORY, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder/d"};
-    messageQueue.push(mes2);
-    messageQueue.push(mes);
+    EventMessage mes = {NEW_FILE, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder/client3_file"};
+    EventMessage mes2 = {NEW_DIRECTORY, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder/d"};
+    ClientEventReporter::messageQueue.enqueue(mes2);
+    ClientEventReporter::messageQueue.enqueue(mes);
     ///
     std::thread s(&DropboxClient::sender, this);
     std::thread r(&DropboxClient::receiver, this);
@@ -38,7 +38,7 @@ int DropboxClient::run()
  */
 void DropboxClient::newClientProcedure()
 {
-    sendEvent(*this, Dropbox::NEW_CLIENT);
+    sendEvent(*this, NEW_CLIENT);
 }
 /**
  * Funkcja (wątek) zczytujący wiadomości z kolejki messageQueue i wysyłająca je do serwera
@@ -49,16 +49,13 @@ void DropboxClient::sender()
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
     while (true)
     {
-        while (messageQueue.empty()); // TODO wyeliminować aktywne czekanie, std::conditional_variable - inotify niech budzi sendera
-        messageQueueMutex.lock();
+        while (ClientEventReporter::messageQueue.empty()); // TODO wyeliminować aktywne czekanie, std::conditional_variable - inotify niech budzi sendera
 
-        EventMessage eventMessage = messageQueue.front();
-        messageQueue.pop();
+        EventMessage eventMessage = ClientEventReporter::messageQueue.dequeue();
 
-        messageQueueMutex.unlock();
-
-        Event event = eventMessage.event;
+        ProtocolEvent event = eventMessage.event;
         std::string path = eventMessage.source;
+
         std::cout << "Sender:\n";
         switch (event)
         {
@@ -110,10 +107,10 @@ void DropboxClient::receiver()
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
     while (true)
     {
-        Event event;
+        ProtocolEvent event;
         std::cout << "R: " << getTotalReceived() << std::endl;
         std::cout << "S: " << getTotalSent() << std::endl;
-        recieveEvent(serverSocket, event);
+        receiveEvent(serverSocket, event);
         std::cout << "Receiver:\n";
         switch (event)
         {
@@ -122,7 +119,7 @@ void DropboxClient::receiver()
                 {
                     std::cout << "NEW FILE\n";
                     receiveNewFileProcedure(serverSocket, serverMutex);
-                    std::cout << "FILE RECIEVED\n";
+                    std::cout << "FILE receiveD\n";
                 }
                 catch (std::exception &e)
                 {

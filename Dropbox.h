@@ -5,9 +5,11 @@
 #ifndef DROPBOX_DROPBOX_H
 #define DROPBOX_DROPBOX_H
 
+#include "TcpSocket.h"
+#include "ProtocolEvent.h"
+
 #include <string>
 #include <stdexcept>
-#include "TcpSocket.h"
 #include <boost/filesystem/path.hpp>
 #include <mutex>
 #include <queue>
@@ -35,24 +37,13 @@ protected:
 
     void moveFile(std::string source, std::string destination);
 
-    enum Event
-    {
-        HEARTBEAT,
-        NEW_CLIENT,
-        NEW_FILE,
-        DELETE_FILE,
-        MOVE_FILE,
-        NEW_DIRECTORY,
-        COPY_FILE
-    };
-
     typedef uint32_t IntType;
 
-    //void sendEvent(Event event);
-    void sendEvent(TcpSocket &sock, Event event);
+    //void sendEvent(ProtocolEvent event);
+    void sendEvent(TcpSocket &sock, ProtocolEvent event);
 
-    //void recieveEvent(Event &event);
-    void recieveEvent(TcpSocket &sock, Event &event);
+    //void receiveEvent(ProtocolEvent &event);
+    void receiveEvent(TcpSocket &sock, ProtocolEvent &event);
 
     //void sendInt(IntType data);
     void sendInt(TcpSocket &sock, IntType data);
@@ -88,13 +79,7 @@ protected:
 
     std::string receiveNewDircetoryProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
-    struct EventMessage
-    {
-        Event event;
-        std::string source;
-        std::string destination;
-        TcpSocket sender;
-    };
+
 public:
     int getTotalReceived() const;
     void sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex);
