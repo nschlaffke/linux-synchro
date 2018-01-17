@@ -40,8 +40,8 @@ void Dropbox::receiveEvent(TcpSocket &sock, ProtocolEvent &data)
         received += sock.receiveData(dataPointer, bytes);
         totalReceived += received;
         dataPointer += received;
-        received += sock.receiveData(dataPointer, bytes);
-        totalReceived += received;
+        //received += sock.receiveData(dataPointer, bytes);
+        //totalReceived += received;
 
     } while (bytes - received > 0);
     data = static_cast<ProtocolEvent>(ntohl(dataToreceive));
@@ -179,7 +179,7 @@ void Dropbox::sendFile(const std::string fileName)
  */
 void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
 {
-    std::ifstream file(fileName, std::ios::binary | std::ios::in);
+    std::ifstream file(fileName, std::ios::in);
     if (!file.good())
     {
         throw DropboxException("Couldn't open file");
@@ -188,7 +188,7 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
     char buffer[CHUNK_SIZE];
     int rest = fileSize % CHUNK_SIZE;
     int sent = 0;
-    for (int i = 1; fileSize >= CHUNK_SIZE * i; i++)
+    for (int i = 1; CHUNK_SIZE * i <= fileSize; i++)
     {
         file.read(buffer, CHUNK_SIZE);
         sent += sock.sendData(buffer, CHUNK_SIZE);
@@ -196,6 +196,7 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
     }
     if(rest > 0)
     {
+        file.read(buffer, rest);
         sent += sock.sendData(buffer, rest);
     }
     totalSent += fileSize;
@@ -209,7 +210,8 @@ void Dropbox::receiveFile(const std::string fileName, size_t fileSize)
  */
 void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize) // fileName jest sciezka do pliku
 {
-    std::ofstream file(fileName, std::ios::binary | std::ios::out | std::ios::trunc);
+    std::ofstream file;
+    file.open(fileName, std::ios::out | std::ios::trunc);
     if(!file.good())
     {
         throw DropboxException("Error creating file");
@@ -223,6 +225,7 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
         file.seekp(size, std::ios::cur);
     }
     size_t size = sock.receiveData(buffer, rest);
+    file.write(buffer, size);
     totalReceived += fileSize;
     file.close();
 }

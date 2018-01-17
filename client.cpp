@@ -24,7 +24,7 @@ int main(int argc, const char *argv[])
     else
     {
         ip = "127.0.0.1";
-        port = 8002;
+        port = 8811;
         path = "/home/piotr/Desktop/Dropbox/__test__";
     }
 

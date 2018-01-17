@@ -22,7 +22,7 @@ private:
     std::mutex serverMutex;
 
     TcpSocket &serverSocket;
-    ClientEventReporter eventReporter;
+    std::string folderPath;
 
     void newClientProcedure();
 

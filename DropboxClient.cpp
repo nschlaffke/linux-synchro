@@ -8,7 +8,7 @@
 
 // TODO jeżeli sender umiera, receiver też musi umrzec -> conditional variable
 DropboxClient::DropboxClient(const std::string &ip, unsigned short port, const std::string folderPath)
-        : Dropbox(folderPath), TcpSocket(ip, port), serverSocket(*this), eventReporter(folderPath)
+        : Dropbox(folderPath), TcpSocket(ip, port), serverSocket(*this), folderPath(folderPath)
 {}
 
 int DropboxClient::run()
@@ -18,17 +18,14 @@ int DropboxClient::run()
         throw DropboxException("Error: Client not connected\n");
     }
     newClientProcedure();
-    // TODO usunac nastepujace linie, tylko do testow !!!!
-    ///
-    EventMessage mes = {NEW_FILE, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder/client3_file"};
-    EventMessage mes2 = {NEW_DIRECTORY, "/home/ns/Documents/Studia/semestr5/SK2/Dropbox/test/client3_folder/d"};
-    ClientEventReporter::messageQueue.enqueue(mes2);
-    ClientEventReporter::messageQueue.enqueue(mes);
-    ///
+
+    std::thread t(&ClientEventReporter::handleNotifications, ClientEventReporter(folderPath));
     std::thread s(&DropboxClient::sender, this);
     std::thread r(&DropboxClient::receiver, this);
+
     s.join();
     r.join();
+    t.join();
 }
 
 /**

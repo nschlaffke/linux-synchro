@@ -101,12 +101,7 @@ void ClientEventReporter::requestCopying(Notification notification) //copy, crea
     }
 }
 
-void runNewThread(Notifier notifier)
-{
-    notifier.run();
-}
-
-void ClientEventReporter::handleNotification()
+void ClientEventReporter::handleNotifications()
 {
     Notifier delNotifier = Notifier()
             .watchPathRecursively(ClientEventReporter::observedDirectory)
@@ -125,9 +120,9 @@ void ClientEventReporter::handleNotification()
 
     std::cout << "Waiting for events..." << std::endl;
 
-    std::thread t1(runNewThread, delNotifier);
-    std::thread t2(runNewThread, newNotifier);
-    std::thread t3(runNewThread, attribNotifier);
+    std::thread t1(&Notifier::run, delNotifier);
+    std::thread t2(&Notifier::run, newNotifier);
+    std::thread t3(&Notifier::run, attribNotifier);
     t1.join();
     t2.join();
     t3.join();

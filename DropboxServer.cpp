@@ -159,19 +159,30 @@ void DropboxServer::newClientProcedure(ClientData &clientData)
 {
     TcpSocket &sock = clientData.sock;
     std::mutex &clientMutex = clientData.sockMutex;
-    boost::filesystem::recursive_directory_iterator end; // domyślny konstruktor wskazuje na koniec
-    for (boost::filesystem::recursive_directory_iterator i(folderPath); i != end; i++)
+
+    if(boost::filesystem::exists(folderPath))
     {
-        boost::filesystem::path path = i->path();
-        if (boost::filesystem::is_regular_file(path))
+        if(boost::filesystem::is_directory(folderPath))
         {
-            sendNewFileProcedure(sock, path.c_str(), clientMutex);
-        }
-        else if (boost::filesystem::is_directory(path))
-        {
-            sendNewDirectoryProcedure(sock, path.c_str(), clientMutex);
+            boost::filesystem::recursive_directory_iterator it(folderPath, boost::filesystem::symlink_option::recurse);
+            boost::filesystem::recursive_directory_iterator end;
+
+            while(it != end)
+            {
+                boost::filesystem::path currentPath = *it;
+
+                if(boost::filesystem::is_regular_file(currentPath)){
+                    sendNewFileProcedure(sock, it->path().c_str(), clientMutex);
+                }
+                else if (boost::filesystem::is_directory(currentPath))
+                {
+                    sendNewDirectoryProcedure(sock, it->path().c_str(), clientMutex);
+                }
+                ++it;
+            }
         }
     }
+
     // do listy klientów dodajemy na końcu bo:
     // zanim plik zostanie broadcastowany jest juz w systemie plikow serwera, wiec zostanie wyslany w tej procedurze,
     // a nie chcemy by zostal wyslany 2 razy

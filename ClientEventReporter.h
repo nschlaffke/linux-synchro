@@ -33,7 +33,7 @@ public:
     static void requestCreation(Notification notificationTo);
     static void requestDeletion(Notification notification);
     static void requestCopying(Notification notification);
-    void handleNotification();
+    void handleNotifications();
 };
 
 #endif //DROPBOX_CLIENTEVENTREPORTER_H
