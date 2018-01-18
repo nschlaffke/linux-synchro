@@ -68,12 +68,19 @@ protected:
     void receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize);
     //void receiveFile(const std::string fileName, size_t fileSize);
 
+    void deleteFile(std:: string fileName);
+
     const std::string folderPath;
 
     size_t getFileSize(const std::string fileName);
 
-
     void sendNewDirectoryProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex);
+
+    void sendDeletionPathProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex);
+
+    void sendMovedFileProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex);
+
+    std::string receiveDeletionPathProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
     std::string receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 

@@ -10,7 +10,7 @@ enum ProtocolEvent
     HEARTBEAT,
     NEW_CLIENT, //
     NEW_FILE, //
-    DELETE_FILE, //
+    DELETE, //
     MOVE_FILE, // ???
     NEW_DIRECTORY, // ???
     COPY_FILE //

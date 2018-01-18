@@ -26,6 +26,7 @@ namespace inotify {
         close_nowrite = IN_CLOSE_NOWRITE,
         close = IN_CLOSE,
         create = IN_CREATE,
+        create_dir = IN_CREATE | IN_ISDIR,
         remove = IN_DELETE,
         remove_self = IN_DELETE_SELF,
         modify = IN_MODIFY,

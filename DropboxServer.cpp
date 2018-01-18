@@ -64,8 +64,18 @@ void DropboxServer::clientSender(ClientData &clientData)
                     return;
                 }
                 break;
-            case DELETE_FILE:
-                // TODO
+            case DELETE:
+                try
+                {
+                    cout << "SENDING DELETION REQUEST: " << folder << endl;
+                    sendDeletionPathProcedure(client, generateAbsolutPath(message.source), clientMutex);
+                }
+                catch (std::exception &a)
+                {
+                    cout << "DELETION error\nTerminating clientReceiver: " << a.what();
+                    return;
+                }
+
                 break;
             case MOVE_FILE:
                 // TODO
@@ -135,8 +145,18 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                     return;
                 }
                 break;
-            case DELETE_FILE:
-                // TODO
+            case DELETE:
+                try
+                {
+                    file = receiveDeletionPathProcedure(client, clientData.sockMutex);
+                    cout << "DELETE: " << file << endl;
+                    broadcastDeletion(client, file, clientData.sockMutex);
+                }
+                catch (std::exception &a)
+                {
+                    cout << "DELETION error\nTerminating clientReceiver: " << a.what();
+                    return;
+                }
                 break;
             case MOVE_FILE:
                 // TODO
@@ -235,6 +255,25 @@ void DropboxServer::broadcastDirectory(TcpSocket &sender, std::string &path, std
              */
             EventMessage tmp;
             tmp.event = NEW_DIRECTORY;
+            tmp.source = path;
+            tmp.sender = sender;
+            clientData.safeQueue.enqueue(tmp);
+        }
+    }
+}
+
+void DropboxServer::broadcastDeletion(TcpSocket &sender, std::string &path, std::mutex &clientMutex)
+{
+    clientsMutex.lock();
+    std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
+    clientsMutex.unlock();
+    for(ClientData &clientData: clients)
+    {
+        TcpSocket receiver = clientData.sock;
+        if(sender != receiver)
+        {
+            EventMessage tmp;
+            tmp.event = DELETE;
             tmp.source = path;
             tmp.sender = sender;
             clientData.safeQueue.enqueue(tmp);

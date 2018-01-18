@@ -30,7 +30,10 @@ string Notifier::getEventName(Event event)
             return "close_nowrite(" + to_string(static_cast<uint32_t>(event)) + ")";
 
         case Event::create:
-            return "close_nowrite(" + to_string(static_cast<uint32_t>(event)) + ")";
+            return "create(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::create_dir:
+            return "create_dir(" + to_string(static_cast<uint32_t>(event)) + ")";
 
         case Event::remove:
             return "remove(" + to_string(static_cast<uint32_t>(event)) + ")";

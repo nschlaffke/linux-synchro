@@ -77,14 +77,21 @@ void ClientEventReporter::makeRequest(Notification notification, ProtocolEvent p
 void ClientEventReporter::requestCreation(Notification notification) //creation, modification, moved_to (serwer wie ze trzeba utworzyć plik)
 {
     std::cout << "Creation\n";
-    makeRequest(notification, NEW_FILE);
+    if(boost::filesystem::is_directory(notification.path))
+    {
+        makeRequest(notification, NEW_DIRECTORY);
+    }
+    else
+    {
+        makeRequest(notification, NEW_FILE);
+    }
     allFilePaths.push_back(notification.path);
 }
 
 void ClientEventReporter::requestDeletion(Notification notification) //creation, modification, moved_to (serwer wie ze trzeba utworzyć plik)
 {
-    std::cout << "Creation\n";
-    makeRequest(notification, DELETE_FILE);
+    std::cout << "Deletion\n";
+    makeRequest(notification, DELETE);
     std::vector<boost::filesystem::path>::iterator it = find(ClientEventReporter::allFilePaths.begin(), ClientEventReporter::allFilePaths.end(), notification.path);
     ClientEventReporter::allFilePaths.erase(it);
 }
@@ -101,6 +108,11 @@ void ClientEventReporter::requestCopying(Notification notification) //copy, crea
     }
 }
 
+void ClientEventReporter::requestMovement(Notification notification)
+{
+    // TODO: To be implemented
+}
+
 void ClientEventReporter::handleNotifications()
 {
     Notifier delNotifier = Notifier()
@@ -111,19 +123,26 @@ void ClientEventReporter::handleNotifications()
     Notifier newNotifier = Notifier()
             .watchPathRecursively(ClientEventReporter::observedDirectory)
             .ignoreFileOnce("file")
-            .onEvents({Event::moved_to, Event::create, Event::modify}, requestCreation);
+            .onEvents({Event::moved_to, Event::create, Event::create_dir, Event::modify}, requestCreation);
 
     Notifier attribNotifier = Notifier()
             .watchPathRecursively(ClientEventReporter::observedDirectory)
             .ignoreFileOnce("file")
             .onEvents({Event::attrib}, requestCopying);
 
+    Notifier movementNotifier = Notifier()
+            .watchPathRecursively(ClientEventReporter::observedDirectory)
+            .ignoreFileOnce("file")
+            .onEvents({Event::moved_from, Event::moved_from}, requestMovement);
+
     std::cout << "Waiting for events..." << std::endl;
 
     std::thread t1(&Notifier::run, delNotifier);
     std::thread t2(&Notifier::run, newNotifier);
     std::thread t3(&Notifier::run, attribNotifier);
+    //std::thread t4(&Notifier::run, requestMovement);
     t1.join();
     t2.join();
     t3.join();
+    //t4.join();
 }

@@ -21,9 +21,16 @@ class ClientEventReporter
     boost::filesystem::path observedDirectory;
 
     static char* convertToCharArray(string path);
+    static bool checkInternalMovement();
     vector <boost::filesystem::path> collectFilePaths(boost::filesystem::path dir);
 
 public:
+
+    struct fileInfo
+    {
+        boost::filesystem::path path;
+
+    };
 
     static vector <boost::filesystem::path> allFilePaths;
     static SafeQueue<EventMessage> messageQueue;
@@ -33,6 +40,7 @@ public:
     static void requestCreation(Notification notificationTo);
     static void requestDeletion(Notification notification);
     static void requestCopying(Notification notification);
+    static void requestMovement(Notification notification);
     void handleNotifications();
 };
 

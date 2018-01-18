@@ -29,8 +29,9 @@ private:
     void newClientProcedure(ClientData &clientData);
     std::mutex clientsMutex;
     void broadcastFile(TcpSocket sender, std::string path, std::mutex &clientMutex);
-
     void broadcastDirectory(TcpSocket &sender, std::string &path, std::mutex &clientMutex);
+    void broadcastDeletion(TcpSocket &sender, std::string &path, std::mutex &clientMutex);
+
     std::vector<ClientData>::iterator clientVectorIterator;
     void clientReceiver(ClientData &clientData);
 
