@@ -70,6 +70,8 @@ protected:
 
     void deleteFile(std:: string fileName);
 
+    void copyFile(std::string source, std::string destination);
+
     const std::string folderPath;
 
     size_t getFileSize(const std::string fileName);
@@ -80,9 +82,13 @@ protected:
 
     void sendMovePathsProcedure(TcpSocket sock, std::string directoryPath, std::string destinationPath, std::mutex &clientMutex);
 
+    void sendCopyPathsProcedure(TcpSocket sock, std::string directoryPath, std::string destinationPath, std::mutex &clientMutex);
+
     std::string receiveDeletionPathProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
     std::string* receiveMovePathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
+
+    std::string* receiveCopyPathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
     std::string receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 

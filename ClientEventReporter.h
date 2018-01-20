@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <mutex>
 
+#define BUFFER_SIZE 16384 // 16kB
+
 using namespace inotify;
 
 class ClientEventReporter
@@ -35,10 +37,11 @@ public:
     static SafeQueue<EventMessage> messageQueue;
 
     ClientEventReporter(boost::filesystem::path observedDirectory);
+    static bool checkIfSameFiles(boost::filesystem::path path1, boost::filesystem::path path2);
     static void makeRequest(Notification notification, ProtocolEvent protocolEvent);
+    static bool checkIfCopied(Notification &notification);
     static void requestCreation(Notification notificationTo);
     static void requestDeletion(Notification notification);
-    static void requestCopying(Notification notification);
     static void requestMoveFrom(Notification notification);
     static void requestMoveTo(Notification notification);
     static void chooseRequest(Notification notification);

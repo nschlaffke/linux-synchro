@@ -80,12 +80,25 @@ void DropboxServer::clientSender(ClientData &clientData)
             case MOVE:
                 try
                 {
-                    cout << "SENDING MOVE REQUEST: " << folder << endl;
+                    cout << "SENDING MOVE REQUEST: " << file << endl;
                     sendMovePathsProcedure(client, generateAbsolutPath(file), generateAbsolutPath(message.destination), clientMutex);
                 }
                 catch (std::exception &a)
                 {
                     cout << "MOVE error\nTerminating clientReceiver: " << a.what();
+                    return;
+                }
+                break;
+
+            case COPY:
+                try
+                {
+                    cout << "SENDING COPY REQUEST: " << file << endl;
+                    sendCopyPathsProcedure(client, generateAbsolutPath(file), generateAbsolutPath(message.destination), clientMutex);
+                }
+                catch (std::exception &a)
+                {
+                    cout << "COPY error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
@@ -177,6 +190,20 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 catch (std::exception &a)
                 {
                     cout << "MOVE error\nTerminating clientReceiver: " << a.what();
+                    return;
+                }
+                break;
+
+            case COPY:
+                try
+                {
+                    files = receiveCopyPathsProcedure(client, clientData.sockMutex);
+                    std::cout << "COPY FROM: " << files[0] << " TO: " << files[1] << std::endl;
+                    broadcastCopy(client, files[0], files[1], clientData.sockMutex);
+                }
+                catch (std::exception &a)
+                {
+                    cout << "Copy error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
@@ -320,6 +347,26 @@ void DropboxServer::broadcastMove(TcpSocket &sender, std::string &file1, std::st
         {
             EventMessage tmp;
             tmp.event = MOVE;
+            tmp.source = file1;
+            tmp.destination = file2;
+            tmp.sender = sender;
+            clientData.safeQueue.enqueue(tmp);
+        }
+    }
+}
+
+void DropboxServer::broadcastCopy(TcpSocket &sender, std::string &file1, std::string &file2, std::mutex &clientMutex)
+{
+    clientsMutex.lock();
+    std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
+    clientsMutex.unlock();
+    for(ClientData &clientData: clients)
+    {
+        TcpSocket receiver = clientData.sock;
+        if(sender != receiver)
+        {
+            EventMessage tmp;
+            tmp.event = COPY;
             tmp.source = file1;
             tmp.destination = file2;
             tmp.sender = sender;

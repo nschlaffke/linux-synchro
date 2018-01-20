@@ -247,6 +247,14 @@ void Dropbox::deleteFile(std::string fileName)
     }
 }
 
+void Dropbox::copyFile(std::string source, std::string destination)
+{
+    ifstream  src(source.c_str(), ios::binary | ios::in);
+    ofstream  dst(destination.c_str(), ios::binary | ios::out | ios::trunc);
+
+    dst << src.rdbuf();
+}
+
 size_t Dropbox::getFileSize(const std::string fileName)
 {
     std::ifstream in(fileName.c_str(), std::ios::binary | std::ios::ate);
@@ -356,6 +364,21 @@ void Dropbox::sendMovePathsProcedure(TcpSocket sock, std::string sourcePath, std
     clientMutex.unlock();
 }
 
+void Dropbox::sendCopyPathsProcedure(TcpSocket sock, std::string sourcePath, std::string destinationPath, std::mutex &clientMutex)
+{
+    clientMutex.lock();
+    sendEvent(sock, COPY);
+    std::__cxx11::string relativeSourcePath = generateRelativePath(sourcePath);
+    std::__cxx11::string relativeDestinationPath = generateRelativePath(destinationPath);
+    std::cout << "SEND SOURCE PATH: " << relativeSourcePath << std::endl;
+    sendString(sock, relativeSourcePath);
+    std::cout << "SEND DESTINATION PATH: " << relativeDestinationPath << std::endl;
+    sendString(sock, relativeDestinationPath);
+    std::cout << "Received " << getTotalReceived() << std::endl;
+    std::cout << "Sent: " << getTotalSent() << std::endl;
+    clientMutex.unlock();
+}
+
 std::string Dropbox::receiveDeletionPathProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
 {
     clientMutex.lock();
@@ -382,6 +405,21 @@ std::string* Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mu
     receiveString(serverSocket, paths[0]);
     receiveString(serverSocket, paths[1]);
     moveFile(generateAbsolutPath(paths[0]), generateAbsolutPath(paths[1]));
+    std::cout << "Received " << getTotalReceived() << std::endl;
+    std::cout << "Sent: " << getTotalSent() << std::endl;
+    clientMutex.unlock();
+    return paths;
+}
+
+std::string* Dropbox::receiveCopyPathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
+{
+    std::string *paths = new string[2];
+
+    clientMutex.lock();
+    std::string fileName;
+    receiveString(serverSocket, paths[0]);
+    receiveString(serverSocket, paths[1]);
+    copyFile(generateAbsolutPath(paths[0]), generateAbsolutPath(paths[1]));
     std::cout << "Received " << getTotalReceived() << std::endl;
     std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();

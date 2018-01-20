@@ -95,8 +95,18 @@ void DropboxClient::sender() {
                     return;
                 }
                 break;
-            case COPY_FILE:
-                // TODO sender COPY_FILE
+            case COPY:
+                try {
+                    std::string source = eventMessage.source;
+                    std::cout << "COPY FROM: " << source << " TO: " << path << std::endl;
+
+                    sendCopyPathsProcedure(serverSocket, source, path, serverMutex);
+                }
+                catch (std::exception &e) {
+                    std::cout << "COPY error: " << e.what()
+                              << "Terminating client\n";
+                    return;
+                }
                 break;
         }
     }
@@ -160,8 +170,16 @@ void DropboxClient::receiver() {
                     return;
                 }
                 break;
-            case COPY_FILE:
-                // TODO receiver COPY_FILE
+            case COPY:
+                try {
+                    std::cout << "COPY\n";
+                    receiveCopyPathsProcedure(serverSocket, serverMutex);
+                }
+                catch (std::exception &e) {
+                    std::cout << "COPY error: " << e.what()
+                              << "Terminating client\n";
+                    return;
+                }
                 break;
             default:
                 throw DropboxException("Protocol error");

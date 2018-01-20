@@ -32,6 +32,7 @@ private:
     void broadcastDirectory(TcpSocket &sender, std::string &path, std::mutex &clientMutex);
     void broadcastDeletion(TcpSocket &sender, std::string &path, std::mutex &clientMutex);
     void broadcastMove(TcpSocket &sender, std::string &file1, std::string &file2, std::mutex &clientMutex);
+    void broadcastCopy(TcpSocket &sender, std::string &file1, std::string &file2, std::mutex &clientMutex);
 
     std::vector<ClientData>::iterator clientVectorIterator;
     void clientReceiver(ClientData &clientData);

@@ -46,8 +46,8 @@ vector <ClientEventReporter::FileInfo> ClientEventReporter::collectFilePaths(boo
 
             FileInfo fileInfo;
             fileInfo.path = path;
-            fileInfo.fileSize = ClientEventReporter::getFileSize(path.c_str());
-
+            fileInfo.fileSize = -1;
+            cout << fileInfo.path << endl;
             filePaths.push_back(fileInfo);
 
             while(it != end)
@@ -59,6 +59,7 @@ vector <ClientEventReporter::FileInfo> ClientEventReporter::collectFilePaths(boo
                     fileInfo.path = currentPath;
                     fileInfo.fileSize = ClientEventReporter::getFileSize(currentPath.c_str());
 
+                    cout << fileInfo.path << endl;
                     filePaths.push_back(fileInfo);
                 }
 
@@ -94,60 +95,117 @@ void ClientEventReporter::makeRequest(Notification notification, ProtocolEvent p
     mtx.unlock();
 }
 
+bool ClientEventReporter::checkIfSameFiles(boost::filesystem::path path1, boost::filesystem::path path2)
+{
+    std::ifstream file1(path1.c_str(), std::ifstream::in | std::ifstream::binary);
+    std::ifstream file2(path2.c_str(), std::ifstream::in | std::ifstream::binary);
+
+    if(!file1.is_open() || !file2.is_open())
+    {
+        return false;
+    }
+
+    char *buffer1 = new char[BUFFER_SIZE]();
+    char *buffer2 = new char[BUFFER_SIZE]();
+
+    do {
+        file1.read(buffer1, BUFFER_SIZE);
+        file2.read(buffer2, BUFFER_SIZE);
+
+        if (std::memcmp(buffer1, buffer2, BUFFER_SIZE) != 0)
+        {
+            delete[] buffer1;
+            delete[] buffer2;
+            return false;
+        }
+    } while (file1.good() || file2.good());
+
+    delete[] buffer1;
+    delete[] buffer2;
+    return true;
+}
+
+bool ClientEventReporter::checkIfCopied(Notification &notification)
+{
+    FileInfo fileInfo;
+    fileInfo.path = notification.destination;
+    fileInfo.fileSize = getFileSize(notification.destination.c_str());
+
+    auto it = find(ClientEventReporter::allFilesInfo.begin(), ClientEventReporter::allFilesInfo.end(), fileInfo);
+    if(it == ClientEventReporter::allFilesInfo.end()){
+
+        for(FileInfo fi: ClientEventReporter::allFilesInfo)
+        {
+            if(fi.fileSize == fileInfo.fileSize && fi.path.filename() == fileInfo.path.filename())
+            {
+                if(checkIfSameFiles(fileInfo.path, fi.path))
+                {
+                    notification.source = fi.path;
+                    return true;
+                }
+            }
+        }
+
+        return false; //new file
+    }
+    else // ordinary modyfication
+    {
+        return false;
+    }
+}
+
 void ClientEventReporter::requestCreation(Notification notification) //creation, modification, moved_to (serwer wie ze trzeba utworzyć plik)
 {
     std::cout << "Creation\n";
+    FileInfo fileInfo;
+    fileInfo.path = notification.destination;
+
+    // there is no need for creating empty directories, because their size is extremely small
+    if(boost::filesystem::is_regular_file(notification.destination) && checkIfCopied(notification))
+    {
+        std::cout << "Copied\n";
+        fileInfo.fileSize = getFileSize(notification.destination.c_str());
+        makeRequest(notification, COPY);
+    }
+
     if(boost::filesystem::is_directory(notification.destination))
     {
         std::cout << "Directory creation\n";
+        fileInfo.fileSize = -1;
         makeRequest(notification, NEW_DIRECTORY);
     }
     else
     {
         std::cout << "File creation\n";
+        fileInfo.fileSize = getFileSize(notification.destination.c_str());
         makeRequest(notification, NEW_FILE);
     }
 
-
-    FileInfo fileInfo;
-    fileInfo.path = notification.destination;
-    fileInfo.fileSize = getFileSize(notification.destination.c_str());
     allFilesInfo.push_back(fileInfo);
 }
 
 void ClientEventReporter::requestDeletion(Notification notification) //creation, modification, moved_to (serwer wie ze trzeba utworzyć plik)
 {
     std::cout << "Deletion\n";
+    FileInfo fileInfo;
 
     if(notification.event == Event::remove_self)
     {
         notification.destination = notification.destination.remove_filename();
+        fileInfo.fileSize = -1;
     }
+    else
+    {
+        fileInfo.fileSize = getFileSize(notification.destination.c_str());
+    }
+
+    fileInfo.path = notification.destination;
+
+    auto it = find(ClientEventReporter::allFilesInfo.begin(), ClientEventReporter::allFilesInfo.end(), fileInfo);
+
+    ClientEventReporter::allFilesInfo.erase(it);
 
     makeRequest(notification, DELETE);
-
-    FileInfo fileInfo;
-    fileInfo.path = notification.destination;
-    fileInfo.fileSize = getFileSize(notification.destination.c_str());
-
-    auto it = find(ClientEventReporter::allFilesInfo.begin(), ClientEventReporter::allFilesInfo.end(), fileInfo);
-    ClientEventReporter::allFilesInfo.erase(it);
-}
-
-void ClientEventReporter::requestCopying(Notification notification) //copy, creation via console for example: touch
-{
-    FileInfo fileInfo;
-    fileInfo.path = notification.destination;
-    fileInfo.fileSize = getFileSize(notification.destination.c_str());
-
-    auto it = find(ClientEventReporter::allFilesInfo.begin(), ClientEventReporter::allFilesInfo.end(), fileInfo);
-    if(it == ClientEventReporter::allFilesInfo.end())
-    {
-        std::cout << "Attrib\n";
-        makeRequest(notification, COPY_FILE);
-
-        allFilesInfo.push_back(fileInfo);
-    }
 }
 
 bool ClientEventReporter::isInternalMove(Notification &notification)

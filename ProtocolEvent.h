@@ -13,7 +13,7 @@ enum ProtocolEvent
     DELETE, //
     MOVE, // ???
     NEW_DIRECTORY, // ???
-    COPY_FILE //
+    COPY //
 };
 
 struct EventMessage
