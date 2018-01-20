@@ -18,6 +18,8 @@
 #include <sstream>
 #include <memory>
 #include <sys/inotify.h>
+#include <fcntl.h>
+#include <iostream>
 #include "EventType.h"
 
 #define MAX_EVENTS     4096

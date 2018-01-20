@@ -9,6 +9,7 @@
 #include "ProtocolEvent.h"
 #include "SafeQueue.h"
 
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <algorithm>
@@ -18,21 +19,19 @@ using namespace inotify;
 
 class ClientEventReporter
 {
-    boost::filesystem::path observedDirectory;
-
-    static char* convertToCharArray(string path);
-    static bool checkInternalMovement();
-    vector <boost::filesystem::path> collectFilePaths(boost::filesystem::path dir);
 
 public:
 
-    struct fileInfo
+    struct FileInfo
     {
         boost::filesystem::path path;
-
+        int fileSize;
+        friend bool operator==(const FileInfo& first, const FileInfo& second){
+            return first.path == second.path && first.fileSize == second.fileSize;
+        }
     };
 
-    static vector <boost::filesystem::path> allFilePaths;
+    static vector <FileInfo> allFilesInfo;
     static SafeQueue<EventMessage> messageQueue;
 
     ClientEventReporter(boost::filesystem::path observedDirectory);
@@ -40,8 +39,21 @@ public:
     static void requestCreation(Notification notificationTo);
     static void requestDeletion(Notification notification);
     static void requestCopying(Notification notification);
-    static void requestMovement(Notification notification);
+    static void requestMoveFrom(Notification notification);
+    static void requestMoveTo(Notification notification);
+    static void chooseRequest(Notification notification);
     void handleNotifications();
+
+private:
+
+    boost::filesystem::path observedDirectory;
+
+    static char* convertToCharArray(string path);
+    static bool isInternalMove(Notification &notification);
+    static int getFileSize(const char* filename);
+    vector <FileInfo> collectFilePaths(boost::filesystem::path dir);
+
+
 };
 
 #endif //DROPBOX_CLIENTEVENTREPORTER_H

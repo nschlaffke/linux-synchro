@@ -78,9 +78,11 @@ protected:
 
     void sendDeletionPathProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex);
 
-    void sendMovedFileProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex);
+    void sendMovePathsProcedure(TcpSocket sock, std::string directoryPath, std::string destinationPath, std::mutex &clientMutex);
 
     std::string receiveDeletionPathProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
+
+    std::string* receiveMovePathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
     std::string receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 

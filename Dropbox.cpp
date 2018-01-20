@@ -1,11 +1,4 @@
 #include "DropboxClient.h"
-#include "DropboxServer.h"
-#include <thread>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem.hpp>
-#include <iostream>
-#include "Dropbox.h"
-#include "TcpSocket.h"
 //
 // Created by ns on 10.01.18.
 
@@ -99,6 +92,11 @@ void Dropbox::receiveInt(IntType &data)
 
 void Dropbox::createDirectory(std::string directoryPath)
 {
+    if(boost::filesystem::exists(boost::filesystem::path(directoryPath)))
+    {
+        return;
+    }
+
     boost::filesystem::path dir = directoryPath;
     if (!boost::filesystem::create_directory(dir))
     {
@@ -126,20 +124,14 @@ void Dropbox::deleteFiles(std::string filePath)
 
 boost::filesystem::path Dropbox::createPath(std::string path)
 {
-    return boost::filesystem::path(folderPath + "/" + path);
+    return boost::filesystem::path(folderPath + path);
 }
 
 void Dropbox::moveFile(std::string source, std::string destination)
 {
-    boost::filesystem::path sourcePath = createPath(source);
-    boost::filesystem::path destinationPatth = createPath(destination);
-    try
+    if (rename(source.c_str(), destination.c_str()))
     {
-        boost::filesystem::rename(sourcePath, destinationPatth);
-    }
-    catch(boost::filesystem::filesystem_error error)
-    {
-       throw DropboxException(error.what());
+        throw DropboxException("Move operation has failed");
     }
 }
 /*
@@ -245,7 +237,7 @@ void Dropbox::deleteFile(std::string fileName)
             int result = remove(fileName.c_str());
             if(result != 0)
             {
-                throw DropboxException("Error deleting file");
+                throw DropboxException("Error deleting file: " + fileName);
             }
         }
     }
@@ -325,6 +317,12 @@ void Dropbox::sendNewDirectoryProcedure(TcpSocket sock, std::string directoryPat
     clientMutex.unlock();
 }
 
+/**
+ * 1. wysyła event DELETE
+ * 2. wysyła ścieżkę pliku do usunięcia
+ * @param sock
+ * @param directoryPath ścieżka BEZWZGLĘDNA
+ */
 void Dropbox::sendDeletionPathProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex)
 {
     clientMutex.lock();
@@ -337,9 +335,25 @@ void Dropbox::sendDeletionPathProcedure(TcpSocket sock, std::string directoryPat
     clientMutex.unlock();
 }
 
-void Dropbox::sendMovedFileProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex)
+/**
+ * 1. wysyła event MOVE
+ * 2. wysyła ścieżki źródłową i docelową pliku do usunięcia
+ * @param sock
+ * @param directoryPath ścieżka BEZWZGLĘDNA
+ */
+void Dropbox::sendMovePathsProcedure(TcpSocket sock, std::string sourcePath, std::string destinationPath, std::mutex &clientMutex)
 {
-
+    clientMutex.lock();
+    sendEvent(sock, MOVE);
+    std::__cxx11::string relativeSourcePath = generateRelativePath(sourcePath);
+    std::__cxx11::string relativeDestinationPath = generateRelativePath(destinationPath);
+    std::cout << "SEND SOURCE PATH: " << relativeSourcePath << std::endl;
+    sendString(sock, relativeSourcePath);
+    std::cout << "SEND DESTINATION PATH: " << relativeDestinationPath << std::endl;
+    sendString(sock, relativeDestinationPath);
+    std::cout << "Received " << getTotalReceived() << std::endl;
+    std::cout << "Sent: " << getTotalSent() << std::endl;
+    clientMutex.unlock();
 }
 
 std::string Dropbox::receiveDeletionPathProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
@@ -355,13 +369,44 @@ std::string Dropbox::receiveDeletionPathProcedure(TcpSocket &serverSocket, std::
 }
 
 /**
+ * 1. odbiera ścieżkę źródłową pliku
+ * 2. odbiera ścieżkę docelową pliku
+ * 3. wykonuję operację move
+ */
+std::string* Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
+{
+    std::string *paths = new string[2];
+
+    clientMutex.lock();
+    std::string fileName;
+    receiveString(serverSocket, paths[0]);
+    receiveString(serverSocket, paths[1]);
+    moveFile(generateAbsolutPath(paths[0]), generateAbsolutPath(paths[1]));
+    std::cout << "Received " << getTotalReceived() << std::endl;
+    std::cout << "Sent: " << getTotalSent() << std::endl;
+    clientMutex.unlock();
+    return paths;
+}
+
+/*bool checkIfExists(std::string fileName)
+{
+    for(ClientEventReporter::FileInfo fileInfo: ClientEventReporter::allFilesInfo)
+    {
+        if(fileInfo.path.string() == fileName)
+        {
+            return true;
+        }
+    }
+    return false;
+}*/
+
+/**
  * 1. odbiera nazwę pliku
  * 2. odbiera rozmiar pliku
  * 3. odbiera plik
  */
 std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
 {
-
     clientMutex.lock();
     std::string fileName;
     IntType size;

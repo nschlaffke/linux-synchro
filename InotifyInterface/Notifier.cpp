@@ -14,8 +14,7 @@ const vector<Event> Notifier::events =
 // const vector<Event> Notifier::events = {Event::modify};
 
 
-string Notifier::getEventName(Event event)
-{
+string Notifier::getEventName(Event event) {
     switch (event) {
         case Event::access:
             return "access(" + to_string(static_cast<uint32_t>(event)) + ")";
@@ -56,8 +55,17 @@ string Notifier::getEventName(Event event)
         case Event::moved_to:
             return "moved_to(" + to_string(static_cast<uint32_t>(event)) + ")";
 
+        case Event::moved_to_dir:
+            return "moved_to(" + to_string(static_cast<uint32_t>(event)) + ")";
+
         case Event::move:
             return "move(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::internal_move:
+            return "internal_move(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::outward_move:
+            return "outward_move(" + to_string(static_cast<uint32_t>(event)) + ")";
 
         case Event::open:
             return "open(" + to_string(static_cast<uint32_t>(event)) + ")";
@@ -70,35 +78,29 @@ string Notifier::getEventName(Event event)
     }
 }
 
-Notifier& Notifier::watchPathRecursively(boost::filesystem::path path)
-{
+Notifier &Notifier::watchPathRecursively(boost::filesystem::path path) {
     mInotify->watchDirectoryRecursively(path);
     return *this;
 }
 
-Notifier& Notifier::watchFile(boost::filesystem::path file)
-{
+Notifier &Notifier::watchFile(boost::filesystem::path file) {
     mInotify->watchFile(file);
     return *this;
 }
 
-Notifier& Notifier::ignoreFileOnce(string fileName)
-{
+Notifier &Notifier::ignoreFileOnce(string fileName) {
     mInotify->ignoreFileOnce(fileName);
     return *this;
 }
 
-Notifier& Notifier::onEvent(Event event, NotificationHandler eventObserver)
-{
+Notifier &Notifier::onEvent(Event event, NotificationHandler eventObserver) {
     mInotify->setEventFlag(mInotify->getEventFlag() | static_cast<uint32_t>(event));
     mEventObserver[event] = eventObserver;
     return *this;
 }
 
-Notifier& Notifier::onEvents(vector<Event> events, NotificationHandler eventObserver)
-{
-    for(auto event : events)
-    {
+Notifier &Notifier::onEvents(vector<Event> events, NotificationHandler eventObserver) {
+    for (auto event : events) {
         mInotify->setEventFlag(mInotify->getEventFlag() | static_cast<uint32_t>(event));
         mEventObserver[event] = eventObserver;
     }
@@ -106,28 +108,68 @@ Notifier& Notifier::onEvents(vector<Event> events, NotificationHandler eventObse
     return *this;
 }
 
-void Notifier::runOnce()
-{
-    auto fileSystemEvent = mInotify->getNextEvent();
-    Event event = static_cast<Event>(fileSystemEvent.getWEventFlag());
+Event Notifier::determineMoveType(Notification &notification) {
 
-    auto eventAndEventObserver = mEventObserver.find(event);
-    if (eventAndEventObserver == mEventObserver.end())
+    vector<Notification> notifications;
+    Notification tmpNotification;
+
+    do {
+        auto fileSystemEvent = mInotify->getNextEvent();
+        tmpNotification.event = static_cast<Event>(fileSystemEvent.getWEventFlag());
+        tmpNotification.destination = fileSystemEvent.getPath();
+        notifications.push_back(tmpNotification);
+    } while (mInotify->getLastErrno() != EAGAIN);
+
+    for(Notification notif: notifications)
     {
-        return;
+        if(notif.event == Event::moved_to || notif.event == Event::moved_to_dir)
+        {
+            cout << "Internal moveE\n\n";
+            notification.source = notification.destination;
+            notification.destination = notif.destination;
+            return Event::internal_move;
+        }
     }
 
+    cout << "Outward moveE\n\n";
+    return Event::outward_move;
+}
+
+void Notifier::runOnce() {
+    auto fileSystemEvent = mInotify->getNextEvent();
+    Event event = static_cast<Event>(fileSystemEvent.getWEventFlag());
     Notification notification;
+    notification.source = "";
+    notification.destination = fileSystemEvent.getPath();
+
+    if (event == Event::moved_from || event == Event::moved_from_dir)
+    {
+        event = determineMoveType(notification);
+    }
+
+    else if(event == Event::create)
+    {
+        this->watchFile(fileSystemEvent.getPath());
+    }
+
+    else if(event == Event::create_dir)
+    {
+        this->watchPathRecursively(fileSystemEvent.getPath());
+    }
+
     notification.event = event;
-    notification.path = fileSystemEvent.getPath();
+
+    auto eventAndEventObserver = mEventObserver.find(event);
+    if (eventAndEventObserver == mEventObserver.end()) {
+        return;
+    }
 
     auto eventObserver = eventAndEventObserver->second;
     eventObserver(notification);
 }
 
-void Notifier::run()
-{
-    while(true) {
+void Notifier::run() {
+    while (true) {
         runOnce();
     }
 }

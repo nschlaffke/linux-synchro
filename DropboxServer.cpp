@@ -37,14 +37,14 @@ void DropboxServer::clientSender(ClientData &clientData)
     {
         EventMessage message = queue.dequeue(); // tutaj usypia
         ProtocolEvent event = message.event;
-        string file, folder;
+        string file = message.destination, folder = message.destination;
         switch (event)
         {
             case NEW_FILE:
                 try
                 {
                     cout << "SENDING NEW FILE: " << file << endl;
-                    sendNewFileProcedure(client, generateAbsolutPath(message.source), clientMutex);
+                    sendNewFileProcedure(client, generateAbsolutPath(file), clientMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -56,7 +56,7 @@ void DropboxServer::clientSender(ClientData &clientData)
                 try
                 {
                     cout << "SENDING NEW DIRECTORY: " << folder << endl;
-                    sendNewDirectoryProcedure(client, generateAbsolutPath(message.source), clientMutex);
+                    sendNewDirectoryProcedure(client, generateAbsolutPath(folder), clientMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -68,7 +68,7 @@ void DropboxServer::clientSender(ClientData &clientData)
                 try
                 {
                     cout << "SENDING DELETION REQUEST: " << folder << endl;
-                    sendDeletionPathProcedure(client, generateAbsolutPath(message.source), clientMutex);
+                    sendDeletionPathProcedure(client, generateAbsolutPath(file), clientMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -77,8 +77,17 @@ void DropboxServer::clientSender(ClientData &clientData)
                 }
 
                 break;
-            case MOVE_FILE:
-                // TODO
+            case MOVE:
+                try
+                {
+                    cout << "SENDING MOVE REQUEST: " << folder << endl;
+                    sendMovePathsProcedure(client, generateAbsolutPath(file), generateAbsolutPath(message.destination), clientMutex);
+                }
+                catch (std::exception &a)
+                {
+                    cout << "MOVE error\nTerminating clientReceiver: " << a.what();
+                    return;
+                }
                 break;
             default:
                 cout << "PROTOCOL error\n Terminating clientReceiver\n";
@@ -104,7 +113,7 @@ void DropboxServer::clientReceiver(ClientData &clientData)
             cout << "Terminating clientReceiver: " << a.what();
             return;
         }
-        string file, folder;
+        string file, folder, *files;
         switch (tmp)
         {
             case NEW_CLIENT:
@@ -158,8 +167,18 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                     return;
                 }
                 break;
-            case MOVE_FILE:
-                // TODO
+            case MOVE:
+                try
+                {
+                    files = receiveMovePathsProcedure(client, clientData.sockMutex);
+                    std::cout << "MOVE FROM: " << files[0] << " TO: " << files[1] << std::endl;
+                    broadcastMove(client, files[0], files[1], clientData.sockMutex);
+                }
+                catch (std::exception &a)
+                {
+                    cout << "MOVE error\nTerminating clientReceiver: " << a.what();
+                    return;
+                }
                 break;
             default:
                 cout << "PROTOCOL error\n Terminating clientReceiver\n";
@@ -227,7 +246,7 @@ void DropboxServer::broadcastFile(TcpSocket sender, std::string path, std::mutex
         {
             EventMessage tmp;
             tmp.event = NEW_FILE;
-            tmp.source = path;
+            tmp.destination = path;
             tmp.sender = sender;
             clientData.safeQueue.enqueue(tmp);
         }
@@ -255,13 +274,17 @@ void DropboxServer::broadcastDirectory(TcpSocket &sender, std::string &path, std
              */
             EventMessage tmp;
             tmp.event = NEW_DIRECTORY;
-            tmp.source = path;
+            tmp.destination = path;
             tmp.sender = sender;
             clientData.safeQueue.enqueue(tmp);
         }
     }
 }
 
+/**
+ * wysyła ścieżkę pliku do usunięcia do wszystkich klientów oprócz nadawcy
+ * @param sender
+ */
 void DropboxServer::broadcastDeletion(TcpSocket &sender, std::string &path, std::mutex &clientMutex)
 {
     clientsMutex.lock();
@@ -274,7 +297,31 @@ void DropboxServer::broadcastDeletion(TcpSocket &sender, std::string &path, std:
         {
             EventMessage tmp;
             tmp.event = DELETE;
-            tmp.source = path;
+            tmp.destination = path;
+            tmp.sender = sender;
+            clientData.safeQueue.enqueue(tmp);
+        }
+    }
+}
+
+/**
+ * wysyła ścieżki źródłową i docelową pliku do wycięcia do wszystkich klientów oprócz nadawcy
+ * @param sender
+ */
+void DropboxServer::broadcastMove(TcpSocket &sender, std::string &file1, std::string &file2, std::mutex &clientMutex)
+{
+    clientsMutex.lock();
+    std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
+    clientsMutex.unlock();
+    for(ClientData &clientData: clients)
+    {
+        TcpSocket receiver = clientData.sock;
+        if(sender != receiver)
+        {
+            EventMessage tmp;
+            tmp.event = MOVE;
+            tmp.source = file1;
+            tmp.destination = file2;
             tmp.sender = sender;
             clientData.safeQueue.enqueue(tmp);
         }

@@ -15,7 +15,11 @@
 #include <stdexcept>
 #include <memory>
 #include <fstream>
+#include <iostream>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 #include "Descriptor.h"
+#include "POSIXError.h"
 
 #define CHUNK_SIZE 1024
 

@@ -32,16 +32,21 @@ namespace inotify {
         modify = IN_MODIFY,
         move_self = IN_MOVE_SELF,
         moved_from = IN_MOVED_FROM,
+        moved_from_dir = IN_MOVED_FROM | IN_ISDIR,
         moved_to = IN_MOVED_TO,
+        moved_to_dir = IN_MOVED_TO | IN_ISDIR,
         move = IN_MOVE,
         open = IN_OPEN,
-        all = IN_ALL_EVENTS
+        all = IN_ALL_EVENTS,
+        outward_move = 1111,
+        internal_move = 2222,
     };
 
     struct Notification
     {
         Event event;
-        boost::filesystem::path path;
+        boost::filesystem::path source;
+        boost::filesystem::path destination;
     };
 
     using NotificationHandler = std::function<void(Notification)>;
@@ -51,6 +56,7 @@ namespace inotify {
 
         shared_ptr<Inotify> mInotify;
         map<Event, NotificationHandler> mEventObserver;
+        Event determineMoveType(Notification &notification);
 
         public:
             Notifier() : mInotify(make_shared<Inotify>()){}

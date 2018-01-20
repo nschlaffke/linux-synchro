@@ -11,7 +11,7 @@ enum ProtocolEvent
     NEW_CLIENT, //
     NEW_FILE, //
     DELETE, //
-    MOVE_FILE, // ???
+    MOVE, // ???
     NEW_DIRECTORY, // ???
     COPY_FILE //
 };

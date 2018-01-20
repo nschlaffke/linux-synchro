@@ -4,11 +4,7 @@
 
 #define DEBUG 0
 
-#include <iostream>
-#include <fcntl.h>
-#include <sys/ioctl.h>
 #include "TcpSocket.h"
-#include "POSIXError.h"
 
 #if (DEBUG == 1)
 #include <iostream>

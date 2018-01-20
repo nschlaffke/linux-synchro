@@ -167,6 +167,9 @@ EventType Inotify::getNextEvent()
     time_t currentEventTime = time(NULL);
     vector<EventType> events;
 
+    int flags = fcntl(mInotifyFileDescriptor, F_GETFL, 0);
+    fcntl(mInotifyFileDescriptor, F_SETFL, flags | O_NONBLOCK);
+
     while(mEventQueue.empty())
     {
         length = 0;
