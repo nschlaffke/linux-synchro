@@ -7,7 +7,7 @@
 using namespace inotify;
 
 vector<ClientEventReporter::FileInfo> ClientEventReporter::allFilesInfo;
-SafeQueue<EventMessage> ClientEventReporter::messageQueue;
+SafeQueue<Dropbox::EventMessage> ClientEventReporter::messageQueue;
 std::mutex mtx;
 
 
@@ -75,12 +75,12 @@ vector <ClientEventReporter::FileInfo> ClientEventReporter::collectFilePaths(boo
     return filePaths;
 }
 
-void ClientEventReporter::makeRequest(Notification notification, ProtocolEvent protocolEvent) //deletion = moved_from, self-deletion
+void ClientEventReporter::makeRequest(Notification notification, Dropbox::ProtocolEvent protocolEvent) //deletion = moved_from, self-deletion
 {
     string path = notification.destination.string();
     Event event = notification.event;
 
-    EventMessage eventMessage;
+    Dropbox::EventMessage eventMessage;
     eventMessage.event = protocolEvent;
     if(!notification.source.empty())
     {
@@ -165,20 +165,20 @@ void ClientEventReporter::requestCreation(Notification notification) //creation,
     {
         std::cout << "Copied\n";
         fileInfo.fileSize = getFileSize(notification.destination.c_str());
-        makeRequest(notification, COPY);
+        makeRequest(notification, Dropbox::ProtocolEvent::COPY);
     }
 
     if(boost::filesystem::is_directory(notification.destination))
     {
         std::cout << "Directory creation\n";
         fileInfo.fileSize = -1;
-        makeRequest(notification, NEW_DIRECTORY);
+        makeRequest(notification, Dropbox::ProtocolEvent::NEW_DIRECTORY);
     }
     else
     {
         std::cout << "File creation\n";
         fileInfo.fileSize = getFileSize(notification.destination.c_str());
-        makeRequest(notification, NEW_FILE);
+        makeRequest(notification, Dropbox::ProtocolEvent::NEW_FILE);
     }
 
     allFilesInfo.push_back(fileInfo);
@@ -205,7 +205,7 @@ void ClientEventReporter::requestDeletion(Notification notification) //creation,
 
     ClientEventReporter::allFilesInfo.erase(it);
 
-    makeRequest(notification, DELETE);
+    makeRequest(notification, Dropbox::ProtocolEvent::DELETE);
 }
 
 bool ClientEventReporter::isInternalMove(Notification &notification)
@@ -238,7 +238,7 @@ void ClientEventReporter::requestMoveFrom(Notification notification)
     else
     {
         std::cout << "InternalMove\n";
-        makeRequest(notification, MOVE);
+        makeRequest(notification, Dropbox::ProtocolEvent::MOVE);
     }
 
 }
@@ -248,7 +248,7 @@ void ClientEventReporter::requestMoveTo(Notification notification)
     if(isInternalMove(notification))
     {
         std::cout << "InternalMove\n";
-        makeRequest(notification, MOVE);
+        makeRequest(notification, Dropbox::ProtocolEvent::MOVE);
     }
     else
     {

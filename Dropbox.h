@@ -5,9 +5,8 @@
 #ifndef DROPBOX_DROPBOX_H
 #define DROPBOX_DROPBOX_H
 
-#include "TcpSocket.h"
-#include "ProtocolEvent.h"
 
+#include "TcpSocket.h"
 #include <string>
 #include <stdexcept>
 #include <boost/filesystem/path.hpp>
@@ -17,6 +16,17 @@
 class Dropbox
 {
 public:
+    enum ProtocolEvent
+    {
+        HEARTBEAT,
+        NEW_CLIENT, //
+        NEW_FILE, //
+        DELETE, //
+        MOVE, // ???
+        NEW_DIRECTORY, // ???
+        COPY //
+    };
+    struct EventMessage;
 
     Dropbox(const std::string &folderPath);
 
@@ -68,7 +78,7 @@ protected:
     void receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize);
     //void receiveFile(const std::string fileName, size_t fileSize);
 
-    void deleteFile(std:: string fileName);
+    void deleteFile(std::string fileName);
 
     void copyFile(std::string source, std::string destination);
 
@@ -80,15 +90,17 @@ protected:
 
     void sendDeletionPathProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex);
 
-    void sendMovePathsProcedure(TcpSocket sock, std::string directoryPath, std::string destinationPath, std::mutex &clientMutex);
+    void sendMovePathsProcedure(TcpSocket sock, std::string directoryPath, std::string destinationPath,
+                                std::mutex &clientMutex);
 
-    void sendCopyPathsProcedure(TcpSocket sock, std::string directoryPath, std::string destinationPath, std::mutex &clientMutex);
+    void sendCopyPathsProcedure(TcpSocket sock, std::string directoryPath, std::string destinationPath,
+                                std::mutex &clientMutex);
 
     std::string receiveDeletionPathProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
-    std::string* receiveMovePathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
+    std::string *receiveMovePathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
-    std::string* receiveCopyPathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
+    std::string *receiveCopyPathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
     std::string receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex &clientMutex);
 
@@ -97,12 +109,14 @@ protected:
 
 public:
     int getTotalReceived() const;
+
     void sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex);
 
 protected:
     std::string generateRelativePath(std::string path);
 
     int getTotalSent();
+
 private:
     int totalSent;
     int totalReceived;
@@ -111,4 +125,11 @@ private:
 };
 
 
+struct Dropbox::EventMessage
+{
+    Dropbox::ProtocolEvent event;
+    std::__cxx11::string source;
+    std::__cxx11::string destination;
+    TcpSocket sender;
+};
 #endif //DROPBOX_DROPBOX_H

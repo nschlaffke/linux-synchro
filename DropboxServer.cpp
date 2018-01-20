@@ -6,6 +6,7 @@
 #include <thread>
 #include <boost/filesystem.hpp>
 #include "DropboxServer.h"
+
 // TODO mutex na system plikow
 // TODO sprawdzanie czy klient sie nie odlaczyl
 // TODO ogarnac badziewna liste klientow

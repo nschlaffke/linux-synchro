@@ -6,14 +6,13 @@
 #define DROPBOX_CLIENTEVENTREPORTER_H
 
 #include "InotifyInterface/Notifier.h"
-#include "ProtocolEvent.h"
 #include "SafeQueue.h"
+#include "Dropbox.h"
 
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include <mutex>
 
 #define BUFFER_SIZE 16384 // 16kB
 
@@ -34,11 +33,11 @@ public:
     };
 
     static vector <FileInfo> allFilesInfo;
-    static SafeQueue<EventMessage> messageQueue;
+    static SafeQueue<Dropbox::EventMessage> messageQueue;
 
     ClientEventReporter(boost::filesystem::path observedDirectory);
     static bool checkIfSameFiles(boost::filesystem::path path1, boost::filesystem::path path2);
-    static void makeRequest(Notification notification, ProtocolEvent protocolEvent);
+    static void makeRequest(Notification notification, Dropbox::ProtocolEvent protocolEvent);
     static bool checkIfCopied(Notification &notification);
     static void requestCreation(Notification notificationTo);
     static void requestDeletion(Notification notification);
