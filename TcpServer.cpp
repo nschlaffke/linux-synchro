@@ -25,6 +25,7 @@ TcpServer::TcpServer(const std::string ip, const unsigned short port)
 
 TcpSocket TcpServer::doAccept()
 {
+    // TODO do accepta podawac addr tworzonego socketa. bedzie mozna uzyskac IP i port
     if (!bound)
     {
         throw SocketException(POSIXError::getErrorMessage("Accept before binding"));
