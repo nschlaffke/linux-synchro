@@ -19,7 +19,7 @@ class DropboxServer : public Dropbox, public TcpServer
 
 public:
     DropboxServer(const std::string &ip, const unsigned short port, const std::string path);
-    int run();
+    void run();
 
 private:
     struct ClientData;

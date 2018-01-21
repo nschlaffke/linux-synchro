@@ -11,8 +11,9 @@
 #endif
 
 TcpSocket::TcpSocket(const std::string ip, const unsigned short port) :
-        ipAddress(ip), portNumber(port), connectionEstablished(false), bound(false),
-        sock(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))
+        bound(false), sock(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)),
+        ipAddress(ip), portNumber(port), connectionEstablished(false)
+
 {
     if (!sock.isValid())
     {

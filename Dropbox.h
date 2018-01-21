@@ -18,7 +18,6 @@ class Dropbox
 public:
     enum ProtocolEvent
     {
-        HEARTBEAT,
         NEW_CLIENT, //
         NEW_FILE, //
         DELETE, //
@@ -37,7 +36,7 @@ public:
         {}
     };
 
-    virtual int run() = 0;
+    virtual void run() = 0;
 
 protected:
 

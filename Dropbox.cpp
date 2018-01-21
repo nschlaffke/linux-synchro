@@ -107,8 +107,7 @@ void Dropbox::createDirectory(std::string directoryPath)
 }
 
 Dropbox::Dropbox(const std::string &folderPath) :
-        folderPath(folderPath),
-        maxStringSize(500), totalSent(0), totalReceived(0)
+        folderPath(folderPath), totalSent(0), totalReceived(0), maxStringSize(500)
 {}
 
 void Dropbox::deleteFiles(std::string filePath)
@@ -177,14 +176,14 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
         throw DropboxException("Couldn't open file");
     }
     size_t fileSize = getFileSize(fileName);
-    char buffer[CHUNK_SIZE];
-    int rest = fileSize % CHUNK_SIZE;
+    char buffer[TcpSocket::CHUNK_SIZE];
+    int rest = fileSize % TcpSocket::CHUNK_SIZE;
     int sent = 0;
-    for (int i = 1; CHUNK_SIZE * i <= fileSize; i++)
+    for (int i = 1; TcpSocket::CHUNK_SIZE * i <= fileSize; i++)
     {
-        file.read(buffer, CHUNK_SIZE);
-        sent += sock.sendData(buffer, CHUNK_SIZE);
-        file.seekg(CHUNK_SIZE, std::ios::cur);
+        file.read(buffer, TcpSocket::CHUNK_SIZE);
+        sent += sock.sendData(buffer, TcpSocket::CHUNK_SIZE);
+        file.seekg(TcpSocket::CHUNK_SIZE, std::ios::cur);
     }
     if(rest > 0)
     {
@@ -208,11 +207,11 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
     {
         throw DropboxException("Error creating file");
     }
-    char buffer[CHUNK_SIZE];
-    int rest = fileSize % CHUNK_SIZE;
-    for (int i = 1; CHUNK_SIZE * i <= fileSize; i++)
+    char buffer[TcpSocket::CHUNK_SIZE];
+    int rest = fileSize % TcpSocket::CHUNK_SIZE;
+    for (int i = 1; TcpSocket::CHUNK_SIZE * i <= fileSize; i++)
     {
-        size_t size = sock.receiveData(buffer, CHUNK_SIZE);
+        size_t size = sock.receiveData(buffer, TcpSocket::CHUNK_SIZE);
         file.write(buffer, size);
         file.seekp(size, std::ios::cur);
     }

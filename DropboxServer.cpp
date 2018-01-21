@@ -15,7 +15,7 @@ DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, c
 {}
 
 
-int DropboxServer::run()
+void DropboxServer::run()
 {
     std::vector<ClientData> clientVector(maxClientsNumber);
     clientVectorIterator = clientVector.begin();
@@ -115,7 +115,6 @@ void DropboxServer::clientSender(ClientData &clientData)
 void DropboxServer::clientReceiver(ClientData &clientData)
 {
     TcpSocket client = clientData.sock;
-    std::mutex &clientMutex = clientData.sockMutex;
     while(true)
     {
         using namespace std;

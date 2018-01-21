@@ -8,7 +8,7 @@
 Descriptor::Descriptor()
 {}
 
-Descriptor::Descriptor(int s) : fd(s), isOpen(true)
+Descriptor::Descriptor(int s) : isOpen(true), fd(s)
 {
 }
 

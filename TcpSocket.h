@@ -21,7 +21,6 @@
 #include "Descriptor.h"
 #include "POSIXError.h"
 
-#define CHUNK_SIZE 1024
 
 class TcpSocket
 {
@@ -60,6 +59,7 @@ public:
 
     size_t sendData(const char data[], const size_t size);
 
+    static const size_t CHUNK_SIZE = 1024;
 protected:
     bool bound;
 public:
@@ -71,10 +71,9 @@ protected:
     sockaddr_in addr;
     Descriptor sock;
 private:
-    bool connectionEstablished;
     std::string ipAddress;
     unsigned short int portNumber;
-
+    bool connectionEstablished;
 };
 
 
