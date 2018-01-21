@@ -111,3 +111,5 @@ test/test.cpp
 test/
 cleanup.sh
 test/
+__test__/
+__testServer__/
