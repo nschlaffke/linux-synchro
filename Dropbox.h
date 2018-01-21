@@ -7,9 +7,12 @@
 
 
 #include "TcpSocket.h"
+#include "InotifyInterface/Notifier.h"
 #include <string>
 #include <stdexcept>
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
+#include <fstream>
 #include <mutex>
 #include <queue>
 
@@ -39,6 +42,8 @@ public:
     virtual void run() = 0;
 
 protected:
+
+    inotify::Notifier* notifier;
 
     void createDirectory(std::string directoryPath);
 

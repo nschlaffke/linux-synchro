@@ -36,6 +36,7 @@ public:
     static SafeQueue<Dropbox::EventMessage> messageQueue;
 
     ClientEventReporter(boost::filesystem::path observedDirectory);
+    Notifier* getNotifier();
     static bool checkIfSameFiles(boost::filesystem::path path1, boost::filesystem::path path2);
     static void makeRequest(Notification notification, Dropbox::ProtocolEvent protocolEvent);
     static bool checkIfCopied(Notification &notification);
@@ -49,6 +50,7 @@ public:
 private:
 
     boost::filesystem::path observedDirectory;
+    Notifier notifier;
 
     static char* convertToCharArray(string path);
     static bool isInternalMove(Notification &notification);

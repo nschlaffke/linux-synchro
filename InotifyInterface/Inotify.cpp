@@ -4,15 +4,16 @@
 
 #include "Inotify.h"
 
+SafeSet<string> Inotify::mOnceIgnoredDirectories;
+SafeSet<string> Inotify::mIgnoredDirectories;
+
 Inotify::Inotify() :
     mError(0),
     mEventTimeout(0),
     mLastEventTime(0),
     mEventFlag(IN_ALL_EVENTS),
-    mIgnoredDirectories(std::vector<std::string>()),
     mInotifyFileDescriptor(0)
 {
-  
         init();
 }
 
@@ -21,10 +22,9 @@ Inotify::Inotify(int eventFlag) :
     mEventTimeout(0),
     mLastEventTime(0),
     mEventFlag(eventFlag),
-    mIgnoredDirectories(std::vector<std::string>()),
     mInotifyFileDescriptor(0)
 {
-  
+
         init();
 }
 
@@ -128,7 +128,7 @@ void Inotify::watchFile(boost::filesystem::path filePath)
 
 void Inotify::ignoreFileOnce(boost::filesystem::path fileName)
 {
-    mOnceIgnoredDirectories.push_back(fileName.string());
+    Inotify::mOnceIgnoredDirectories.insert(const_cast<string &>(fileName.string()));
 }
 
 void Inotify::removeWatch(int watchDescriptor)
@@ -242,24 +242,24 @@ int Inotify::getLastErrno()
 
 bool Inotify::isIgnored(string fileName)
 {
-    if(mIgnoredDirectories.empty() && mOnceIgnoredDirectories.empty())
+    if(Inotify::mIgnoredDirectories.empty() && Inotify::mOnceIgnoredDirectories.empty())
     {
         return false;
     }
 
-    for(unsigned i = 0; i < mOnceIgnoredDirectories.size(); ++i)
+    for(auto it = Inotify::mOnceIgnoredDirectories.begin(); it != Inotify::mOnceIgnoredDirectories.end(); ++it)
     {
-        size_t pos = fileName.find(mOnceIgnoredDirectories[i]);
+        size_t pos = fileName.find(*it);
         if(pos != string::npos)
         {
-            mOnceIgnoredDirectories.erase(mOnceIgnoredDirectories.begin() + i);
+            Inotify::mOnceIgnoredDirectories.erase(it);
             return true;
         }
     }
 
-    for(unsigned i = 0; i < mIgnoredDirectories.size(); ++i)
+    for(auto it = Inotify::mOnceIgnoredDirectories.begin(); it != Inotify::mOnceIgnoredDirectories.end(); ++it)
     {
-        size_t pos = fileName.find(mIgnoredDirectories[i]);
+        size_t pos = fileName.find(*it);
         if(pos != string::npos)
         {
             return true;

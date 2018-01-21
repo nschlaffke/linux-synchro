@@ -26,6 +26,11 @@ char* ClientEventReporter::convertToCharArray(string path)
     return convertedPath;
 }
 
+Notifier* ClientEventReporter::getNotifier()
+{
+    return &notifier;
+}
+
 int ClientEventReporter::getFileSize(const char* filename)
 {
     std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
@@ -285,35 +290,14 @@ void ClientEventReporter::chooseRequest(Notification notification)
 
 void ClientEventReporter::handleNotifications()
 {
-    Notifier notifier = Notifier()
+    notifier = Notifier()
             .watchPathRecursively(ClientEventReporter::observedDirectory)
             .ignoreFileOnce("file")
             .onEvents({Event::remove, Event::remove_self, Event::create, Event::create_dir, Event::modify,
                        Event::outward_move, Event::internal_move, Event::moved_to, Event::moved_to_dir}, chooseRequest);
 
-    /*Notifier newNotifier = Notifier()
-            .watchPathRecursively(ClientEventReporter::observedDirectory)
-            .ignoreFileOnce("file")
-            .onEvents({Event::create, Event::create_dir, Event::modify}, requestCreation);
-
-    Notifier movedFromNotifier = Notifier()
-            .watchPathRecursively(ClientEventReporter::observedDirectory)
-            .ignoreFileOnce("file")
-            .onEvents({Event::outward_move, Event::internal_move}, requestMoveFrom);
-
-    Notifier movedToNotifier = Notifier()
-            .watchPathRecursively(ClientEventReporter::observedDirectory)
-            .ignoreFileOnce("file")
-            .onEvents({Event::moved_to}, requestMoveTo);*/
-
     std::cout << "Waiting for events..." << std::endl;
 
     std::thread t1(&Notifier::run, notifier);
-    /*std::thread t2(&Notifier::run, newNotifier);
-    std::thread t4(&Notifier::run, movedFromNotifier);
-    std::thread t5(&Notifier::run, movedToNotifier);*/
     t1.join();
-    /*t2.join();
-    t4.join();
-    t5.join();*/
 }

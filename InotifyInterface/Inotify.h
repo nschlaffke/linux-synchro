@@ -6,6 +6,7 @@
 #define INOTIFY_H
 
 #include <string>
+#include <set>
 #include <queue>
 #include <map>
 #include <vector>
@@ -21,6 +22,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include "EventType.h"
+#include "../SafeSet.h"
 
 #define MAX_EVENTS     4096
 #define EVENT_SIZE     (sizeof (inotify_event))
@@ -34,8 +36,6 @@ class Inotify{
     time_t mEventTimeout;
     time_t mLastEventTime;
     int mEventFlag;
-    vector<string> mIgnoredDirectories;
-    vector<string> mOnceIgnoredDirectories;
     queue<EventType> mEventQueue;
     map<int, boost::filesystem::path> mDirectories;
     int mInotifyFileDescriptor;
@@ -49,6 +49,10 @@ class Inotify{
     void init();
 
     public:
+
+        static SafeSet<string> mIgnoredDirectories;
+        static SafeSet<string> mOnceIgnoredDirectories;
+
         Inotify();
         Inotify(int eventFlag);
         ~Inotify();

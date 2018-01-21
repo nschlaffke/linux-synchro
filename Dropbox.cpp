@@ -1,4 +1,4 @@
-#include "DropboxClient.h"
+#include "Dropbox.h"
 //
 // Created by ns on 10.01.18.
 
@@ -242,14 +242,14 @@ void Dropbox::deleteFile(std::string fileName)
     }
     else
     {
-        throw invalid_argument("It is impossible to delete the file or directory, because the path does not exist. Path: " + fileName + "\n");
+        throw std::invalid_argument("It is impossible to delete the file or directory, because the path does not exist. Path: " + fileName + "\n");
     }
 }
 
 void Dropbox::copyFile(std::string source, std::string destination)
 {
-    ifstream  src(source.c_str(), ios::binary | ios::in);
-    ofstream  dst(destination.c_str(), ios::binary | ios::out | ios::trunc);
+    std::ifstream  src(source.c_str(), std::ios::binary | std::ios::in);
+    std::ofstream  dst(destination.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
 
     dst << src.rdbuf();
 }
@@ -378,11 +378,16 @@ void Dropbox::sendCopyPathsProcedure(TcpSocket sock, std::string sourcePath, std
     clientMutex.unlock();
 }
 
+/**
+ * 1. odbiera ścieżkę do pliku
+ * 2. usuwa plik
+ */
 std::string Dropbox::receiveDeletionPathProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
 {
     clientMutex.lock();
     std::string fileName;
     receiveString(serverSocket, fileName);
+    notifier->ignoreFileOnce(generateAbsolutPath(fileName));
     deleteFile(generateAbsolutPath(fileName));
     std::cout << "Received " << getTotalReceived() << std::endl;
     std::cout << "Sent: " << getTotalSent() << std::endl;
@@ -397,12 +402,14 @@ std::string Dropbox::receiveDeletionPathProcedure(TcpSocket &serverSocket, std::
  */
 std::string* Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
 {
-    std::string *paths = new string[2];
+    std::string *paths = new std::string[2];
 
     clientMutex.lock();
     std::string fileName;
     receiveString(serverSocket, paths[0]);
     receiveString(serverSocket, paths[1]);
+    notifier->ignoreFileOnce(generateAbsolutPath(paths[0]));
+    notifier->ignoreFileOnce(generateAbsolutPath(paths[1]));
     moveFile(generateAbsolutPath(paths[0]), generateAbsolutPath(paths[1]));
     std::cout << "Received " << getTotalReceived() << std::endl;
     std::cout << "Sent: " << getTotalSent() << std::endl;
@@ -412,30 +419,20 @@ std::string* Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mu
 
 std::string* Dropbox::receiveCopyPathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
 {
-    std::string *paths = new string[2];
+    std::string *paths = new std::string[2];
 
     clientMutex.lock();
     std::string fileName;
     receiveString(serverSocket, paths[0]);
     receiveString(serverSocket, paths[1]);
+    notifier->ignoreFileOnce(generateAbsolutPath(paths[0]));
+    notifier->ignoreFileOnce(generateAbsolutPath(paths[1]));
     copyFile(generateAbsolutPath(paths[0]), generateAbsolutPath(paths[1]));
     std::cout << "Received " << getTotalReceived() << std::endl;
     std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
     return paths;
 }
-
-/*bool checkIfExists(std::string fileName)
-{
-    for(ClientEventReporter::FileInfo fileInfo: ClientEventReporter::allFilesInfo)
-    {
-        if(fileInfo.path.string() == fileName)
-        {
-            return true;
-        }
-    }
-    return false;
-}*/
 
 /**
  * 1. odbiera nazwę pliku
@@ -448,6 +445,7 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
     std::string fileName;
     IntType size;
     receiveString(serverSocket, fileName);
+    notifier->ignoreFileOnce(generateAbsolutPath(fileName));
     receiveInt(serverSocket, size);
     receiveFile(serverSocket, generateAbsolutPath(fileName), size);
     std::cout << "Received " << getTotalReceived() << std::endl;
@@ -465,6 +463,7 @@ std::string Dropbox::receiveNewDircetoryProcedure(TcpSocket &serverSocket, std::
     clientMutex.lock();
     std::string folder;
     receiveString(serverSocket, folder);
+    notifier->ignoreFileOnce(generateAbsolutPath(folder));
     clientMutex.unlock();
     createDirectory(generateAbsolutPath(folder));
     std::cout << "Received " << getTotalReceived() << std::endl;

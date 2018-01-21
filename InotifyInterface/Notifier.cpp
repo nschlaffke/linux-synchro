@@ -89,7 +89,7 @@ Notifier &Notifier::watchFile(boost::filesystem::path file) {
 }
 
 Notifier &Notifier::ignoreFileOnce(string fileName) {
-    mInotify->ignoreFileOnce(fileName);
+    Inotify::mOnceIgnoredDirectories.insert(const_cast<string &>(fileName));
     return *this;
 }
 

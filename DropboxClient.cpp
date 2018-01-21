@@ -19,7 +19,10 @@ void DropboxClient::run()
     }
     newClientProcedure();
 
-    std::thread t(&ClientEventReporter::handleNotifications, ClientEventReporter(folderPath));
+    ClientEventReporter cer(folderPath);
+    notifier = cer.getNotifier();
+
+    std::thread t(&ClientEventReporter::handleNotifications, cer);
     std::thread s(&DropboxClient::sender, this);
     std::thread r(&DropboxClient::receiver, this);
 

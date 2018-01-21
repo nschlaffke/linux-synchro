@@ -7,8 +7,8 @@
 
 #include "Dropbox.h"
 #include "TcpSocket.h"
-#include "ClientEventReporter.h"
 #include "SafeQueue.h"
+#include "ClientEventReporter.h"
 #include <mutex>
 
 class DropboxClient : public Dropbox, public TcpSocket
