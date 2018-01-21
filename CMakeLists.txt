@@ -14,7 +14,10 @@ function(enable_cxx_compiler_flag_if_supported flag)
 endfunction()
 
 enable_cxx_compiler_flag_if_supported("-Wall")
-
+#only for debugging
+enable_cxx_compiler_flag_if_supported("-ggdb3")
+enable_cxx_compiler_flag_if_supported("-O0")
+#
 set(SOURCE_FILES TcpSocket.cpp TcpServer.cpp Descriptor.cpp POSIXError.cpp POSIXError.h
         InotifyInterface/Inotify.cpp InotifyInterface/Notifier.cpp InotifyInterface/EventType.cpp
         Dropbox.h Dropbox.cpp SafeQueue.h )
@@ -30,6 +33,8 @@ if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     add_executable(server.o ${SERVER_SOURCE_FILES} server.cpp)
     add_executable(client.o ${CLIENT_SOURCE_FILES} client.cpp)
+    add_executable(client2.o ${CLIENT_SOURCE_FILES} client2.cpp)
+    add_executable(client3.o ${CLIENT_SOURCE_FILES} client3.cpp)
     target_link_libraries(server.o ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
     target_link_libraries(client.o ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif ()

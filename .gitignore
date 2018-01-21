@@ -113,3 +113,5 @@ cleanup.sh
 test/
 __test__/
 __testServer__/
+client2.cpp
+client3.cpp
