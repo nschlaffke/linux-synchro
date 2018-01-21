@@ -278,6 +278,8 @@ void ClientEventReporter::chooseRequest(Notification notification)
         case Event::moved_to_dir:
             requestMoveTo(notification);
             break;
+        default:
+            break;
     }
 }
 
