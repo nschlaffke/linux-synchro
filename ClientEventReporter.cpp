@@ -8,7 +8,6 @@ using namespace inotify;
 
 vector<ClientEventReporter::FileInfo> ClientEventReporter::allFilesInfo;
 SafeQueue<Dropbox::EventMessage> ClientEventReporter::messageQueue;
-std::mutex mtx;
 
 
 //pewnie nie da sie tak inicjalizowac staticów jak poniżej
@@ -90,9 +89,7 @@ void ClientEventReporter::makeRequest(Notification notification, Dropbox::Protoc
 
     std::cout << "Event: " << Notifier::getEventName(event) << " on " << path << " was triggered." << std::endl;
 
-    mtx.lock();
     ClientEventReporter::messageQueue.enqueue(eventMessage);
-    mtx.unlock();
 }
 
 bool ClientEventReporter::checkIfSameFiles(boost::filesystem::path path1, boost::filesystem::path path2)
