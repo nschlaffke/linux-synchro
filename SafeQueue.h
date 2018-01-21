@@ -9,13 +9,12 @@
 #include <mutex>
 #include <condition_variable>
 
-template <class T>
+template<class T>
 class SafeQueue
 {
 public:
     void enqueue(T &element);
     T dequeue();
-    bool empty();
 
 private:
     std::queue<T> q;
@@ -23,7 +22,7 @@ private:
     std::condition_variable c;
 };
 
-template <class T>
+template<class T>
 void SafeQueue<T>::enqueue(T &element)
 {
     std::lock_guard<std::mutex> lock(m);
@@ -31,23 +30,17 @@ void SafeQueue<T>::enqueue(T &element)
     c.notify_one();
 }
 
-template <class T>
+template<class T>
 T SafeQueue<T>::dequeue()
 {
     std::unique_lock<std::mutex> l(m);
-    while(q.empty())
+    while (q.empty())
     {
         c.wait(l);
     }
     T element = q.front();
     q.pop();
     return element;
-}
-
-template <class T>
-bool SafeQueue<T>::empty()
-{
-    return q.empty();
 }
 
 #endif //DROPBOX_SAFEQUEUE_H
