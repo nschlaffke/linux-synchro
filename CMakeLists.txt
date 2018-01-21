@@ -1,6 +1,20 @@
 cmake_minimum_required(VERSION 3.8)
 project(Dropbox)
 
+include(CheckCXXCompilerFlag)
+function(enable_cxx_compiler_flag_if_supported flag)
+    string(FIND "${CMAKE_CXX_FLAGS}" "${flag}" flag_already_set)
+    if(flag_already_set EQUAL -1)
+        check_cxx_compiler_flag("${flag}" flag_supported)
+        if(flag_supported)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}" PARENT_SCOPE)
+        endif()
+        unset(flag_supported CACHE)
+    endif()
+endfunction()
+
+enable_cxx_compiler_flag_if_supported("-Wall")
+
 set(SOURCE_FILES TcpSocket.cpp TcpServer.cpp Descriptor.cpp POSIXError.cpp POSIXError.h
         InotifyInterface/Inotify.cpp InotifyInterface/Notifier.cpp InotifyInterface/EventType.cpp
         Dropbox.h Dropbox.cpp SafeQueue.h ClientEventReporter.h ClientEventReporter.cpp)
