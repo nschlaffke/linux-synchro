@@ -282,7 +282,6 @@ int Dropbox::getTotalReceived() const
     return totalReceived;
 }
 
-
 /**
  * 1. wysyła event NEW_FILE
  * 2. wysyła nazwę pliku
@@ -296,13 +295,10 @@ void Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mu
     clientMutex.lock();
     sendEvent(sock, NEW_FILE);
     std::__cxx11::string relativePath = generateRelativePath(filePath);
-    std::cout << "SEND FILE: " << relativePath << std::endl;
     sendString(sock, relativePath);
     IntType fileSize = getFileSize(filePath);
     sendInt(sock, fileSize);
     sendFile(sock, filePath);
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
 }
 
@@ -317,10 +313,7 @@ void Dropbox::sendNewDirectoryProcedure(TcpSocket sock, std::string directoryPat
     clientMutex.lock();
     sendEvent(sock, NEW_DIRECTORY);
     std::__cxx11::string relativePath = generateRelativePath(directoryPath);
-    std::cout << "SEND DIRECTORY: " << relativePath << std::endl;
     sendString(sock, relativePath);
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
 }
 
@@ -335,10 +328,7 @@ void Dropbox::sendDeletionPathProcedure(TcpSocket sock, std::string directoryPat
     clientMutex.lock();
     sendEvent(sock, DELETE);
     std::__cxx11::string relativePath = generateRelativePath(directoryPath);
-    std::cout << "SEND PATH: " << relativePath << std::endl;
     sendString(sock, relativePath);
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
 }
 
@@ -354,12 +344,8 @@ void Dropbox::sendMovePathsProcedure(TcpSocket sock, std::string sourcePath, std
     sendEvent(sock, MOVE);
     std::__cxx11::string relativeSourcePath = generateRelativePath(sourcePath);
     std::__cxx11::string relativeDestinationPath = generateRelativePath(destinationPath);
-    std::cout << "SEND SOURCE PATH: " << relativeSourcePath << std::endl;
     sendString(sock, relativeSourcePath);
-    std::cout << "SEND DESTINATION PATH: " << relativeDestinationPath << std::endl;
     sendString(sock, relativeDestinationPath);
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
 }
 
@@ -369,12 +355,8 @@ void Dropbox::sendCopyPathsProcedure(TcpSocket sock, std::string sourcePath, std
     sendEvent(sock, COPY);
     std::__cxx11::string relativeSourcePath = generateRelativePath(sourcePath);
     std::__cxx11::string relativeDestinationPath = generateRelativePath(destinationPath);
-    std::cout << "SEND SOURCE PATH: " << relativeSourcePath << std::endl;
     sendString(sock, relativeSourcePath);
-    std::cout << "SEND DESTINATION PATH: " << relativeDestinationPath << std::endl;
     sendString(sock, relativeDestinationPath);
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
 }
 
@@ -389,8 +371,6 @@ std::string Dropbox::receiveDeletionPathProcedure(TcpSocket &serverSocket, std::
     receiveString(serverSocket, fileName);
     notifier->ignoreFileOnce(generateAbsolutPath(fileName));
     deleteFile(generateAbsolutPath(fileName));
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
     return fileName;
 }
@@ -411,8 +391,6 @@ std::string* Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mu
     notifier->ignoreFileOnce(generateAbsolutPath(paths[0]));
     notifier->ignoreFileOnce(generateAbsolutPath(paths[1]));
     moveFile(generateAbsolutPath(paths[0]), generateAbsolutPath(paths[1]));
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
     return paths;
 }
@@ -428,8 +406,6 @@ std::string* Dropbox::receiveCopyPathsProcedure(TcpSocket &serverSocket, std::mu
     notifier->ignoreFileOnce(generateAbsolutPath(paths[0]));
     notifier->ignoreFileOnce(generateAbsolutPath(paths[1]));
     copyFile(generateAbsolutPath(paths[0]), generateAbsolutPath(paths[1]));
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
     return paths;
 }
@@ -448,8 +424,6 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
     notifier->ignoreFileOnce(generateAbsolutPath(fileName));
     receiveInt(serverSocket, size);
     receiveFile(serverSocket, generateAbsolutPath(fileName), size);
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     clientMutex.unlock();
     return fileName;
 }
@@ -466,7 +440,5 @@ std::string Dropbox::receiveNewDircetoryProcedure(TcpSocket &serverSocket, std::
     notifier->ignoreFileOnce(generateAbsolutPath(folder));
     clientMutex.unlock();
     createDirectory(generateAbsolutPath(folder));
-    std::cout << "Received " << getTotalReceived() << std::endl;
-    std::cout << "Sent: " << getTotalSent() << std::endl;
     return folder;
 }
