@@ -5,11 +5,11 @@
 #ifndef DROPBOX_TCPSERVER_H
 #define DROPBOX_TCPSERVER_H
 
-#include "TcpSocket.h"
+#include "../TcpSocket.h"
 #include <string>
 #include <stdexcept>
 #include <exception>
-#include "Descriptor.h"
+#include "../Descriptor.h"
 
 class TcpServer : public TcpSocket
 {

@@ -5,9 +5,9 @@
 #ifndef DROPBOX_CLIENTEVENTREPORTER_H
 #define DROPBOX_CLIENTEVENTREPORTER_H
 
-#include "InotifyInterface/Notifier.h"
-#include "SafeQueue.h"
-#include "Dropbox.h"
+#include "../InotifyInterface/Notifier.h"
+#include "../SafeQueue.h"
+#include "../Dropbox.h"
 
 #include <fstream>
 #include <iostream>
