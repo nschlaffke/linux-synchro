@@ -9,10 +9,10 @@
 #include <mutex>
 #include <atomic>
 #include <vector>
-#include "../Dropbox.h"
+#include "Dropbox.h"
 #include "TcpServer.h"
-#include "../SafeQueue.h"
-#include "../TcpSocket.h"
+#include "SafeQueue.h"
+#include "TcpSocket.h"
 
 class DropboxServer : public Dropbox, public TcpServer
 {

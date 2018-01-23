@@ -7,7 +7,7 @@
 
 
 #include "Inotify.h"
-#include "../server/TcpServer.h"
+#include "../TcpServer.h"
 #include <boost/filesystem.hpp>
 #include <string>
 #include <memory>
