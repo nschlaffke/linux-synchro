@@ -19,6 +19,7 @@ public:
     unsigned long size();
     typename std::set<T>::iterator begin();
     typename std::set<T>::iterator end();
+    typename std::set<T>::iterator find(T val);
 
 private:
     std::set<T> s;
@@ -66,6 +67,12 @@ template<class T>
 typename std::set<T>::iterator SafeSet<T>::end() {
     std::lock_guard<std::mutex> l(m);
     return s.end();
+}
+
+template<class T>
+typename std::set<T>::iterator SafeSet<T>::find(T val) {
+    std::lock_guard<std::mutex> l(m);
+    return s.find(val);
 }
 
 #endif //DROPBOX_SAFESET_H

@@ -29,6 +29,8 @@ namespace inotify {
         create_dir = IN_CREATE | IN_ISDIR,
         remove = IN_DELETE,
         remove_self = IN_DELETE_SELF,
+        remove_dir = IN_DELETE | IN_ISDIR,
+        remove_self_dir = IN_DELETE_SELF | IN_ISDIR,
         modify = IN_MODIFY,
         move_self = IN_MOVE_SELF,
         moved_from = IN_MOVED_FROM,

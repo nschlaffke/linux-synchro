@@ -43,8 +43,6 @@ public:
 
 protected:
 
-    inotify::Notifier* notifier;
-
     void createDirectory(std::string directoryPath);
 
     void deleteFiles(std::string filePath);

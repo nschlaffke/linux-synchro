@@ -6,15 +6,12 @@
 
 using namespace inotify;
 
-vector<ClientEventReporter::FileInfo> ClientEventReporter::allFilesInfo;
 SafeQueue<Dropbox::EventMessage> ClientEventReporter::messageQueue;
 
-
-//pewnie nie da sie tak inicjalizowac staticów jak poniżej
 ClientEventReporter::ClientEventReporter(boost::filesystem::path observedDirectory)
     : observedDirectory(observedDirectory)
 {
-    ClientEventReporter::allFilesInfo = collectFilePaths(this->observedDirectory);
+    collectFilePaths(this->observedDirectory);
 }
 
 char* ClientEventReporter::convertToCharArray(string path)
@@ -26,20 +23,15 @@ char* ClientEventReporter::convertToCharArray(string path)
     return convertedPath;
 }
 
-Notifier* ClientEventReporter::getNotifier()
-{
-    return &notifier;
-}
-
 int ClientEventReporter::getFileSize(const char* filename)
 {
     std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
     return static_cast<int>(in.tellg());
 }
 
-vector <ClientEventReporter::FileInfo> ClientEventReporter::collectFilePaths(boost::filesystem::path path)
+void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
 {
-    vector <FileInfo> filePaths;
+    struct stat result;
 
     if(boost::filesystem::exists(path))
     {
@@ -50,9 +42,16 @@ vector <ClientEventReporter::FileInfo> ClientEventReporter::collectFilePaths(boo
 
             FileInfo fileInfo;
             fileInfo.path = path;
-            fileInfo.fileSize = -1;
-            cout << fileInfo.path << endl;
-            filePaths.push_back(fileInfo);
+
+            if(stat(fileInfo.path.string().c_str(), &result) == 0)
+            {
+                fileInfo.modificationTime = result.st_mtim;
+            }
+            else
+            {
+                throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
+            }
+            ClientEventReporter::allFilesInfo.insert(fileInfo);
 
             while(it != end)
             {
@@ -61,10 +60,16 @@ vector <ClientEventReporter::FileInfo> ClientEventReporter::collectFilePaths(boo
                 if(boost::filesystem::is_regular_file(currentPath)){
                     FileInfo fileInfo;
                     fileInfo.path = currentPath;
-                    fileInfo.fileSize = ClientEventReporter::getFileSize(currentPath.c_str());
+                    if(stat(fileInfo.path.string().c_str(), &result) == 0)
+                    {
+                        fileInfo.modificationTime = result.st_mtim;
+                    }
+                    else
+                    {
+                        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
+                    }
 
-                    cout << fileInfo.path << endl;
-                    filePaths.push_back(fileInfo);
+                    ClientEventReporter::allFilesInfo.insert(fileInfo);
                 }
 
                 ++it;
@@ -73,10 +78,8 @@ vector <ClientEventReporter::FileInfo> ClientEventReporter::collectFilePaths(boo
     }
     else
     {
-        throw invalid_argument("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
+        throw runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
     }
-
-    return filePaths;
 }
 
 void ClientEventReporter::makeRequest(Notification notification, Dropbox::ProtocolEvent protocolEvent) //deletion = moved_from, self-deletion
@@ -130,15 +133,26 @@ bool ClientEventReporter::checkIfSameFiles(boost::filesystem::path path1, boost:
 bool ClientEventReporter::checkIfCopied(Notification &notification)
 {
     FileInfo fileInfo;
-    fileInfo.path = notification.destination;
-    fileInfo.fileSize = getFileSize(notification.destination.c_str());
+    struct stat result;
 
-    auto it = find(ClientEventReporter::allFilesInfo.begin(), ClientEventReporter::allFilesInfo.end(), fileInfo);
+    fileInfo.path = notification.destination;
+    if(stat(fileInfo.path.string().c_str(), &result) == 0)
+    {
+        fileInfo.modificationTime = result.st_mtim;
+    }
+    else
+    {
+        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
+    }
+
+    auto it = ClientEventReporter::allFilesInfo.find(fileInfo);
     if(it == ClientEventReporter::allFilesInfo.end()){
 
         for(FileInfo fi: ClientEventReporter::allFilesInfo)
         {
-            if(fi.fileSize == fileInfo.fileSize && fi.path.filename() == fileInfo.path.filename())
+            if(fi.modificationTime.tv_sec == fileInfo.modificationTime.tv_sec &&
+               fi.modificationTime.tv_nsec == fileInfo.modificationTime.tv_nsec &&
+               fi.path.filename() == fileInfo.path.filename())
             {
                 if(checkIfSameFiles(fileInfo.path, fi.path))
                 {
@@ -160,52 +174,55 @@ void ClientEventReporter::requestCreation(Notification notification) //creation,
 {
     std::cout << "Creation\n";
     FileInfo fileInfo;
+    struct stat result;
+
     fileInfo.path = notification.destination;
+    if(stat(fileInfo.path.string().c_str(), &result) == 0)
+    {
+        fileInfo.modificationTime = result.st_mtim;
+    }
+    else
+    {
+        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
+    }
 
     // there is no need for creating empty directories, because their size is extremely small
     if(boost::filesystem::is_regular_file(notification.destination) && checkIfCopied(notification))
     {
         std::cout << "Copied\n";
-        fileInfo.fileSize = getFileSize(notification.destination.c_str());
         makeRequest(notification, Dropbox::ProtocolEvent::COPY);
     }
 
     if(boost::filesystem::is_directory(notification.destination))
     {
         std::cout << "Directory creation\n";
-        fileInfo.fileSize = -1;
         makeRequest(notification, Dropbox::ProtocolEvent::NEW_DIRECTORY);
     }
     else
     {
         std::cout << "File creation\n";
-        fileInfo.fileSize = getFileSize(notification.destination.c_str());
         makeRequest(notification, Dropbox::ProtocolEvent::NEW_FILE);
     }
 
-    allFilesInfo.push_back(fileInfo);
+    allFilesInfo.insert(fileInfo);
 }
 
 void ClientEventReporter::requestDeletion(Notification notification) //creation, modification, moved_to (serwer wie ze trzeba utworzyć plik)
 {
     std::cout << "Deletion\n";
-    FileInfo fileInfo;
 
-    if(notification.event == Event::remove_self)
+    if(notification.event == Event::remove_dir || notification.event == Event::remove_self_dir)
     {
         notification.destination = notification.destination.remove_filename();
-        fileInfo.fileSize = -1;
     }
-    else
+
+    for(auto it = ClientEventReporter::allFilesInfo.begin(); it != ClientEventReporter::allFilesInfo.end(); ++it)
     {
-        fileInfo.fileSize = getFileSize(notification.destination.c_str());
+        if(it->path == notification.destination)
+        {
+            ClientEventReporter::allFilesInfo.erase(it);
+        }
     }
-
-    fileInfo.path = notification.destination;
-
-    auto it = find(ClientEventReporter::allFilesInfo.begin(), ClientEventReporter::allFilesInfo.end(), fileInfo);
-
-    ClientEventReporter::allFilesInfo.erase(it);
 
     makeRequest(notification, Dropbox::ProtocolEvent::DELETE);
 }
@@ -213,10 +230,19 @@ void ClientEventReporter::requestDeletion(Notification notification) //creation,
 bool ClientEventReporter::isInternalMove(Notification &notification)
 {
     FileInfo fileInfo;
-    fileInfo.path = notification.destination;
-    fileInfo.fileSize = getFileSize(notification.destination.c_str());
+    struct stat result;
 
-    auto it = find(ClientEventReporter::allFilesInfo.begin(), ClientEventReporter::allFilesInfo.end(), fileInfo);
+    fileInfo.path = notification.destination;
+    if(stat(fileInfo.path.string().c_str(), &result) == 0)
+    {
+        fileInfo.modificationTime = result.st_mtim;
+    }
+    else
+    {
+        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
+    }
+
+    auto it = ClientEventReporter::allFilesInfo.find(fileInfo);
     if(it == ClientEventReporter::allFilesInfo.end())
     {
         return false;
@@ -225,7 +251,7 @@ bool ClientEventReporter::isInternalMove(Notification &notification)
     {
         notification.source = it->path;
         ClientEventReporter::allFilesInfo.erase(it);
-        ClientEventReporter::allFilesInfo.push_back(fileInfo);
+        ClientEventReporter::allFilesInfo.insert(fileInfo);
         return true;
     }
 }
@@ -259,12 +285,35 @@ void ClientEventReporter::requestMoveTo(Notification notification)
     }
 }
 
+bool ClientEventReporter::isIgnored(boost::filesystem::path path)
+{
+    auto it = ignoredPaths.find(path.string());
+    if(it == ignoredPaths.end())
+    {
+        return false;
+    }
+    else
+    {
+        ignoredPaths.erase(it);
+        return true;
+    }
+
+}
+
 void ClientEventReporter::chooseRequest(Notification notification)
 {
+
+    if(ClientEventReporter::isIgnored(notification.destination))
+    {
+        return;
+    }
+
     switch(notification.event)
     {
         case Event::remove:
         case Event::remove_self:
+        case Event::remove_dir:
+        case Event::remove_self_dir:
             requestDeletion(notification);
             break;
 
@@ -286,18 +335,4 @@ void ClientEventReporter::chooseRequest(Notification notification)
         default:
             break;
     }
-}
-
-void ClientEventReporter::handleNotifications()
-{
-    notifier = Notifier()
-            .watchPathRecursively(ClientEventReporter::observedDirectory)
-            .ignoreFileOnce("file")
-            .onEvents({Event::remove, Event::remove_self, Event::create, Event::create_dir, Event::modify,
-                       Event::outward_move, Event::internal_move, Event::moved_to, Event::moved_to_dir}, chooseRequest);
-
-    std::cout << "Waiting for events..." << std::endl;
-
-    std::thread t1(&Notifier::run, notifier);
-    t1.join();
 }

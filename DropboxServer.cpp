@@ -46,36 +46,36 @@ void DropboxServer::clientSender(ClientData &clientData)
             case NEW_FILE:
                 try
                 {
-                    cout << "SENDING NEW FILE: " << file << endl;
-                    sendNewFileProcedure(client, generateAbsolutPath(file), clientMutex);
+                    cout << "senSENDING NEW FILE: " << file << endl;
+                    sendNewFileProcedure(client, file, clientMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "NEW_FILE error\nTerminating clientReceiver: " << a.what();
+                    cout << "senNEW_FILE error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
             case NEW_DIRECTORY:
                 try
                 {
-                    cout << "SENDING NEW DIRECTORY: " << folder << endl;
+                    cout << "senSENDING NEW DIRECTORY: " << folder << endl;
                     sendNewDirectoryProcedure(client, generateAbsolutPath(folder), clientMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "NEW_DIRECTORY error\nTerminating clientReceiver: " << a.what();
+                    cout << "senNEW_DIRECTORY error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
             case DELETE:
                 try
                 {
-                    cout << "SENDING DELETION REQUEST: " << folder << endl;
+                    cout << "senSENDING DELETION REQUEST: " << folder << endl;
                     sendDeletionPathProcedure(client, generateAbsolutPath(file), clientMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "DELETION error\nTerminating clientReceiver: " << a.what();
+                    cout << "senDELETION error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
 
@@ -83,12 +83,12 @@ void DropboxServer::clientSender(ClientData &clientData)
             case MOVE:
                 try
                 {
-                    cout << "SENDING MOVE REQUEST: " << file << endl;
+                    cout << "senSENDING MOVE REQUEST: " << file << endl;
                     sendMovePathsProcedure(client, generateAbsolutPath(file), generateAbsolutPath(message.destination), clientMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "MOVE error\nTerminating clientReceiver: " << a.what();
+                    cout << "senMOVE error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
@@ -101,12 +101,12 @@ void DropboxServer::clientSender(ClientData &clientData)
                 }
                 catch (std::exception &a)
                 {
-                    cout << "COPY error\nTerminating clientReceiver: " << a.what();
+                    cout << "senCOPY error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
             default:
-                cout << "PROTOCOL error\n Terminating clientReceiver\n";
+                cout << "senPROTOCOL error\n Terminating clientReceiver\n";
                 return;
                 break;
         }
@@ -132,14 +132,14 @@ void DropboxServer::clientReceiver(ClientData &clientData)
         switch (tmp)
         {
             case NEW_CLIENT:
-                cout << "NEW CLIENT CONNECTED\n";
+                cout << "recNEW CLIENT CONNECTED\n";
                 try
                 {
                     newClientProcedure(clientData);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "NEW_CLIENT error\nTerminating clientReceiver: " << a.what();
+                    cout << "recNEW_CLIENT error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
@@ -147,12 +147,12 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 try
                 {
                     file = receiveNewFileProcedure(client, clientData.sockMutex);
-                    cout << "NEW FILE: " << file << endl;
+                    cout << "recNEW FILE: " << file << endl;
                     broadcastFile(client, file, clientData.sockMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "NEW_FILE error\nTerminating clientReceiver: " << a.what();
+                    cout << "recNEW_FILE error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
@@ -160,12 +160,12 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 try
                 {
                     folder = receiveNewDircetoryProcedure(client, clientData.sockMutex);
-                    cout << "NEW_DIRECTORY: " << folder << endl;
+                    cout << "recNEW_DIRECTORY: " << folder << endl;
                     broadcastDirectory(client, folder, clientData.sockMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "NEW_DIRECTORY error\nTerminating clientReceiver: " << a.what();
+                    cout << "recNEW_DIRECTORY error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
@@ -173,12 +173,12 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 try
                 {
                     file = receiveDeletionPathProcedure(client, clientData.sockMutex);
-                    cout << "DELETE: " << file << endl;
+                    cout << "recDELETE: " << file << endl;
                     broadcastDeletion(client, file, clientData.sockMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "DELETION error\nTerminating clientReceiver: " << a.what();
+                    cout << "recDELETION error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
@@ -186,12 +186,12 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 try
                 {
                     files = receiveMovePathsProcedure(client, clientData.sockMutex);
-                    std::cout << "MOVE FROM: " << files[0] << " TO: " << files[1] << std::endl;
+                    std::cout << "recMOVE FROM: " << files[0] << " TO: " << files[1] << std::endl;
                     broadcastMove(client, files[0], files[1], clientData.sockMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "MOVE error\nTerminating clientReceiver: " << a.what();
+                    cout << "recMOVE error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
@@ -200,17 +200,17 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 try
                 {
                     files = receiveCopyPathsProcedure(client, clientData.sockMutex);
-                    std::cout << "COPY FROM: " << files[0] << " TO: " << files[1] << std::endl;
+                    std::cout << "recCOPY FROM: " << files[0] << " TO: " << files[1] << std::endl;
                     broadcastCopy(client, files[0], files[1], clientData.sockMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "Copy error\nTerminating clientReceiver: " << a.what();
+                    cout << "recCopy error\nTerminating clientReceiver: " << a.what();
                     return;
                 }
                 break;
             default:
-                cout << "PROTOCOL error\n Terminating clientReceiver\n";
+                cout << "recPROTOCOL error\n Terminating clientReceiver\n";
                 return;
                 break;
         }

@@ -75,7 +75,7 @@ void Inotify::watchDirectoryRecursively(boost::filesystem::path path)
     }
     else
     {
-        throw invalid_argument("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
+        throw runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
     }
 }
 
@@ -122,7 +122,7 @@ void Inotify::watchFile(boost::filesystem::path filePath)
     }
     else
     {
-        throw invalid_argument("It is impossible to watch the path, because the path does not exist. Path: " + filePath.string());
+        throw runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + filePath.string());
     }
 }
 

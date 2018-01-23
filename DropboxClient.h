@@ -14,6 +14,7 @@
 class DropboxClient : public Dropbox, public TcpSocket
 {
 public:
+
     DropboxClient(const std::string &ip, const unsigned short port, const std::string folderPath);
     void run() override;
 
@@ -23,6 +24,8 @@ private:
 
     TcpSocket &serverSocket;
     std::string folderPath;
+
+    Notifier notifier;
 
     void newClientProcedure();
 
