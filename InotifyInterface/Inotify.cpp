@@ -131,8 +131,10 @@ void Inotify::ignoreFileOnce(boost::filesystem::path fileName)
     Inotify::mOnceIgnoredDirectories.insert(const_cast<string &>(fileName.string()));
 }
 
-void Inotify::removeWatch(int watchDescriptor)
+void Inotify::removeWatch(boost::filesystem::path filePath)
 {
+    int watchDescriptor = pathToWatchDescriptor(filePath);
+
     int result = inotify_rm_watch(mInotifyFileDescriptor, watchDescriptor);
     
     if(result == -1){
@@ -148,6 +150,18 @@ void Inotify::removeWatch(int watchDescriptor)
 boost::filesystem::path Inotify::watchDescriptorToPath(int watchDescriptor)
 {
     return mDirectories[watchDescriptor];
+}
+
+int Inotify::pathToWatchDescriptor(boost::filesystem::path path)
+{
+    for(auto entry: mDirectories)
+    {
+        if(entry.second == path)
+        {
+            return entry.first;
+        }
+    }
+    throw runtime_error("Failed to find the path");
 }
 
 void Inotify::setEventFlag(int eventFlag)

@@ -42,9 +42,9 @@ class Inotify{
 
     bool containsPath(boost::filesystem::path filePath);
     boost::filesystem::path watchDescriptorToPath(int watchDescriptor);
+    int pathToWatchDescriptor(boost::filesystem::path path);
     bool isIgnored(string fileName);
     bool onTimeout(time_t eventTime);
-    void removeWatch(int watchDescriptor);
     void removeAllWatches();
     void init();
 
@@ -58,6 +58,7 @@ class Inotify{
         ~Inotify();
         void watchDirectoryRecursively(boost::filesystem::path path);
         void watchFile(boost::filesystem::path path);
+        void removeWatch(boost::filesystem::path filePath);
         void ignoreFileOnce(boost::filesystem::path path);
         void setEventFlag(int eventFlag);
         int getEventFlag();

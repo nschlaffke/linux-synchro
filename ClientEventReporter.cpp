@@ -211,10 +211,10 @@ void ClientEventReporter::requestDeletion(Notification notification) //creation,
 {
     std::cout << "Deletion\n";
 
-    if(notification.event == Event::remove_dir || notification.event == Event::remove_self_dir)
+    /*if(notification.event == Event::remove_dir || notification.event == Event::remove_self_dir)
     {
         notification.destination = notification.destination.remove_filename();
-    }
+    }*/
 
     for(auto it = ClientEventReporter::allFilesInfo.begin(); it != ClientEventReporter::allFilesInfo.end(); ++it)
     {
@@ -305,6 +305,8 @@ void ClientEventReporter::chooseRequest(Notification notification)
 
     if(ClientEventReporter::isIgnored(notification.destination))
     {
+        ClientEventReporter::isIgnored(notification.source);
+
         return;
     }
 

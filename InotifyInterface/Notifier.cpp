@@ -8,7 +8,7 @@ using namespace inotify;
 
 const vector<Event> Notifier::events =
         {Event::access, Event::attrib, Event::close_write, Event::close_nowrite, Event::create,
-         Event::remove, Event::remove_self, Event::close, Event::modify, Event::move_self,
+         Event::remove, Event::remove_self, Event::remove_dir, Event::remove_self_dir, Event::close, Event::modify, Event::move_self,
          Event::moved_from, Event::moved_to, Event::move, Event::open, Event::all};
 
 // const vector<Event> Notifier::events = {Event::modify};
@@ -39,6 +39,12 @@ string Notifier::getEventName(Event event) {
 
         case Event::remove_self:
             return "remove_self(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::remove_dir:
+            return "remove_dir(" + to_string(static_cast<uint32_t>(event)) + ")";
+
+        case Event::remove_self_dir:
+            return "remove_self_dir(" + to_string(static_cast<uint32_t>(event)) + ")";
 
         case Event::close:
             return "close(" + to_string(static_cast<uint32_t>(event)) + ")";
@@ -85,6 +91,11 @@ Notifier &Notifier::watchPathRecursively(boost::filesystem::path path) {
 
 Notifier &Notifier::watchFile(boost::filesystem::path file) {
     mInotify->watchFile(file);
+    return *this;
+}
+
+Notifier &Notifier::removeWatch(boost::filesystem::path file) {
+    mInotify->removeWatch(file);
     return *this;
 }
 

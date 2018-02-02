@@ -13,7 +13,7 @@ DropboxClient::DropboxClient(const std::string &ip, unsigned short port, const s
     notifier = Notifier()
             .watchPathRecursively(boost::filesystem::path(folderPath))
             .ignoreFileOnce("file")
-            .onEvents({Event::remove, Event::remove_self, Event::remove_dir, Event::remove_self_dir, Event::create, Event::create_dir, Event::modify,
+            .onEvents({Event::remove, /*Event::remove_self,*/ Event::remove_dir, Event::remove_self_dir, Event::create, Event::create_dir, Event::modify,
                        Event::outward_move, Event::internal_move, Event::moved_to, Event::moved_to_dir}, ClientEventReporter::chooseRequest);
 }
 
@@ -64,6 +64,7 @@ void DropboxClient::sender()
                 try
                 {
                     std::cout << "senNEW FILE: " << path << std::endl;
+                    notifier.watchFile(boost::filesystem::path(path));
                     sendNewFileProcedure(serverSocket, path, serverMutex);
                 }
                 catch (std::exception &e)
@@ -78,6 +79,7 @@ void DropboxClient::sender()
                 {
                     std::cout << "senDELETE: " << path << std::endl;
                     sendDeletionPathProcedure(serverSocket, path, serverMutex);
+                    // notifier.removeWatch(boost::filesystem::path(path));
                 }
                 catch (std::exception &e)
                 {
@@ -93,6 +95,8 @@ void DropboxClient::sender()
                     std::cout << "senMOVE FROM: " << source << " TO: " << path << std::endl;
 
                     sendMovePathsProcedure(serverSocket, source, path, serverMutex);
+                    // notifier.removeWatch(boost::filesystem::path(source));
+                    notifier.watchFile(boost::filesystem::path(path));
                 }
                 catch (std::exception &e)
                 {
@@ -105,6 +109,7 @@ void DropboxClient::sender()
                 try
                 {
                     sendNewDirectoryProcedure(serverSocket, path, serverMutex);
+                    notifier.watchFile(boost::filesystem::path(path));
                 }
                 catch (std::exception &e)
                 {
@@ -119,6 +124,7 @@ void DropboxClient::sender()
                     std::string source = eventMessage.source;
                     std::cout << "senCOPY FROM: " << source << " TO: " << path << std::endl;
 
+                    notifier.watchFile(boost::filesystem::path(path));
                     sendCopyPathsProcedure(serverSocket, source, path, serverMutex);
                 }
                 catch (std::exception &e)
@@ -139,9 +145,10 @@ void DropboxClient::sender()
  */
 void DropboxClient::receiver()
 {
+    ProtocolEvent event;
+    std::string *files = new string [2];
     while (true)
     {
-        ProtocolEvent event;
         std::cout << "Received: " << getTotalReceived() << std::endl;
         std::cout << "Sent: " << getTotalSent() << std::endl;
         receiveEvent(serverSocket, event);
@@ -151,8 +158,9 @@ void DropboxClient::receiver()
             case NEW_FILE:
                 try
                 {
-                    std::cout << "recNEW FILE\n";
-                    receiveNewFileProcedure(serverSocket, serverMutex);
+                    std::cout << "recNEW FILE" << "\n";
+                    files[0] = receiveNewFileProcedure(serverSocket, serverMutex);
+                    notifier.watchFile(boost::filesystem::path(files[0]));
                 }
                 catch (std::exception &e)
                 {
@@ -165,7 +173,8 @@ void DropboxClient::receiver()
                 try
                 {
                     std::cout << "recDELETE\n";
-                    receiveDeletionPathProcedure(serverSocket, serverMutex);
+                    files[0] = receiveDeletionPathProcedure(serverSocket, serverMutex);
+                    // notifier.removeWatch(boost::filesystem::path(files[0]));
                 }
                 catch (std::exception &e)
                 {
@@ -178,7 +187,9 @@ void DropboxClient::receiver()
                 try
                 {
                     std::cout << "recMOVE\n";
-                    receiveMovePathsProcedure(serverSocket, serverMutex);
+                    files = receiveMovePathsProcedure(serverSocket, serverMutex);
+                    // notifier.removeWatch(boost::filesystem::path(files[0]));
+                    notifier.watchFile(boost::filesystem::path(files[1]));
                 }
                 catch (std::exception &e)
                 {
@@ -191,7 +202,8 @@ void DropboxClient::receiver()
                 try
                 {
                     std::cout << "recNEW DIRECTORY\n";
-                    receiveNewDircetoryProcedure(serverSocket, serverMutex);
+                    files[0] = receiveNewDircetoryProcedure(serverSocket, serverMutex);
+                    notifier.watchPathRecursively(boost::filesystem::path(files[0]));
                 }
                 catch (std::exception &e)
                 {
@@ -204,7 +216,8 @@ void DropboxClient::receiver()
                 try
                 {
                     std::cout << "recCOPY\n";
-                    receiveCopyPathsProcedure(serverSocket, serverMutex);
+                    files = receiveCopyPathsProcedure(serverSocket, serverMutex);
+                    notifier.watchFile(boost::filesystem::path(files[1]));
                 }
                 catch (std::exception &e)
                 {
@@ -218,5 +231,7 @@ void DropboxClient::receiver()
                 break;
         }
     }
+
+    delete[] files;
 }
 

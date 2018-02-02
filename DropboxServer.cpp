@@ -59,7 +59,7 @@ void DropboxServer::clientSender(ClientData &clientData)
                 try
                 {
                     cout << "senSENDING NEW DIRECTORY: " << folder << endl;
-                    sendNewDirectoryProcedure(client, generateAbsolutPath(folder), clientMutex);
+                    sendNewDirectoryProcedure(client, folder, clientMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -71,7 +71,7 @@ void DropboxServer::clientSender(ClientData &clientData)
                 try
                 {
                     cout << "senSENDING DELETION REQUEST: " << folder << endl;
-                    sendDeletionPathProcedure(client, generateAbsolutPath(file), clientMutex);
+                    sendDeletionPathProcedure(client, file, clientMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -83,8 +83,8 @@ void DropboxServer::clientSender(ClientData &clientData)
             case MOVE:
                 try
                 {
-                    cout << "senSENDING MOVE REQUEST: " << file << endl;
-                    sendMovePathsProcedure(client, generateAbsolutPath(file), generateAbsolutPath(message.destination), clientMutex);
+                    cout << "senSENDING MOVE REQUEST FROM: " << message.source << " TO: " << message.destination << endl;
+                    sendMovePathsProcedure(client, message.source, message.destination, clientMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -97,7 +97,7 @@ void DropboxServer::clientSender(ClientData &clientData)
                 try
                 {
                     cout << "SENDING COPY REQUEST: " << file << endl;
-                    sendCopyPathsProcedure(client, generateAbsolutPath(file), generateAbsolutPath(message.destination), clientMutex);
+                    sendCopyPathsProcedure(client, file, message.destination, clientMutex);
                 }
                 catch (std::exception &a)
                 {

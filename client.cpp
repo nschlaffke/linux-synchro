@@ -25,7 +25,7 @@ int main(int argc, const char *argv[])
     {
         ip = "127.0.0.1";
         port = 8811;
-        path = "/home/piotr/Desktop/Dropbox/test2";
+        path = "/home/piotr/Desktop/Dropbox/test";
     }
 
     DropboxClient dropboxClient(ip, port, path);
@@ -38,5 +38,6 @@ int main(int argc, const char *argv[])
        cout << e.what();
        return 0;
     }
+    std::cout << "Client was run on: " << path << std::endl;
     dropboxClient.run();
 }

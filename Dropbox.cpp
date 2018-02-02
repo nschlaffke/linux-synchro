@@ -471,6 +471,7 @@ std::string* Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mu
     receiveString(serverSocket, paths[1]);
     paths[0] = generateAbsolutPath(paths[0]);
     paths[1] = generateAbsolutPath(paths[1]);
+    cout << "FROM: " << paths[0] << " TO: " << paths[1] << std::endl;
     ClientEventReporter::ignoredPaths.insert(paths[0]);
     ClientEventReporter::ignoredPaths.insert(paths[1]);
     moveFile(paths[0], paths[1]);
@@ -507,6 +508,7 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
     IntType size;
     receiveString(serverSocket, fileName);
     fileName = generateAbsolutPath(fileName);
+    std::cout << fileName << std::endl;
     ClientEventReporter::ignoredPaths.insert(fileName);
     receiveInt(serverSocket, size);
     receiveFile(serverSocket, fileName, size);

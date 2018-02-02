@@ -67,6 +67,7 @@ namespace inotify {
             void runOnce();
             Notifier& watchPathRecursively(boost::filesystem::path path);
             Notifier& watchFile(boost::filesystem::path file);
+            Notifier& removeWatch(boost::filesystem::path file);
             Notifier& ignoreFileOnce(string fileName);
             Notifier& onEvent(Event event, NotificationHandler);
             Notifier& onEvents(vector<Event> event, NotificationHandler);
