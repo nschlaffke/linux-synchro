@@ -43,6 +43,9 @@ public:
 
 protected:
 
+    std::string correctPath(std::string path);
+    boost::filesystem::path correctPath(boost::filesystem::path path);
+
     void createDirectory(std::string directoryPath);
 
     void deleteFiles(std::string filePath);
