@@ -59,6 +59,8 @@ namespace inotify {
         shared_ptr<Inotify> mInotify;
         map<Event, NotificationHandler> mEventObserver;
         Event determineMoveType(Notification &notification);
+        Event catchAllCreations();
+        boost::filesystem::path correctPath(boost::filesystem::path path);
 
         public:
             Notifier() : mInotify(make_shared<Inotify>()){}

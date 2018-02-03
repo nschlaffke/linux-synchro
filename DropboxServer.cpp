@@ -38,9 +38,10 @@ void DropboxServer::clientSender(ClientData &clientData)
     SafeQueue<EventMessage> &queue = clientData.safeQueue;
     while(true)
     {
-        EventMessage message = queue.dequeue(); // tutaj usypia
+        EventMessage message = queue.dequeue();
         ProtocolEvent event = message.event;
-        string file = message.destination, folder = message.destination;
+        string file = correctPath(message.destination);
+        cout << endl << file << endl << endl;
         switch (event)
         {
             case NEW_FILE:
@@ -58,8 +59,8 @@ void DropboxServer::clientSender(ClientData &clientData)
             case NEW_DIRECTORY:
                 try
                 {
-                    cout << "senSENDING NEW DIRECTORY: " << folder << endl;
-                    sendNewDirectoryProcedure(client, folder, clientMutex);
+                    cout << "senSENDING NEW DIRECTORY: " << file << endl;
+                    sendNewDirectoryProcedure(client, file, clientMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -70,7 +71,7 @@ void DropboxServer::clientSender(ClientData &clientData)
             case DELETE:
                 try
                 {
-                    cout << "senSENDING DELETION REQUEST: " << folder << endl;
+                    cout << "senSENDING DELETION REQUEST: " << file << endl;
                     sendDeletionPathProcedure(client, file, clientMutex);
                 }
                 catch (std::exception &a)
@@ -83,8 +84,8 @@ void DropboxServer::clientSender(ClientData &clientData)
             case MOVE:
                 try
                 {
-                    cout << "senSENDING MOVE REQUEST FROM: " << message.source << " TO: " << message.destination << endl;
-                    sendMovePathsProcedure(client, message.source, message.destination, clientMutex);
+                    cout << "senSENDING MOVE REQUEST FROM: " << correctPath(message.source) << " TO: " << file << endl;
+                    sendMovePathsProcedure(client, correctPath(message.source), file, clientMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -96,8 +97,8 @@ void DropboxServer::clientSender(ClientData &clientData)
             case COPY:
                 try
                 {
-                    cout << "SENDING COPY REQUEST: " << file << endl;
-                    sendCopyPathsProcedure(client, file, message.destination, clientMutex);
+                    cout << "SENDING COPY REQUEST FROM: " << correctPath(message.source) << " TO: " << file << endl;
+                    sendCopyPathsProcedure(client, correctPath(message.source), file, clientMutex);
                 }
                 catch (std::exception &a)
                 {

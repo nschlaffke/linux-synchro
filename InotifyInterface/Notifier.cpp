@@ -84,6 +84,22 @@ string Notifier::getEventName(Event event) {
     }
 }
 
+boost::filesystem::path Notifier::correctPath(boost::filesystem::path path)
+{
+    std::string path2 = path.string();
+    char forbiddenSign = 1;
+    unsigned int pos = static_cast<int>(path2.find(forbiddenSign));
+
+    if (std::string::npos == pos)
+    {
+        return path;
+    }
+    else
+    {
+        return boost::filesystem::path(path2.substr(0, static_cast<unsigned long>(pos - 1)));
+    }
+}
+
 Notifier &Notifier::watchPathRecursively(boost::filesystem::path path) {
     mInotify->watchDirectoryRecursively(path);
     return *this;
@@ -119,8 +135,8 @@ Notifier &Notifier::onEvents(vector<Event> events, NotificationHandler eventObse
     return *this;
 }
 
-Event Notifier::determineMoveType(Notification &notification) {
-
+Event Notifier::determineMoveType(Notification &notification)
+{
     vector<Notification> notifications;
     Notification tmpNotification;
 
@@ -146,6 +162,21 @@ Event Notifier::determineMoveType(Notification &notification) {
     return Event::outward_move;
 }
 
+Event Notifier::catchAllCreations() {
+    Event event;
+
+    do {
+        auto fileSystemEvent = mInotify->getNextEvent();
+        event = static_cast<Event>(fileSystemEvent.getWEventFlag());
+        if(event != Event::modify)
+        {
+            return event;
+        }
+    } while (mInotify->getLastErrno() != EAGAIN);
+
+    return Event::modify;
+}
+
 void Notifier::runOnce() {
     auto fileSystemEvent = mInotify->getNextEvent();
     Event event = static_cast<Event>(fileSystemEvent.getWEventFlag());
@@ -153,18 +184,25 @@ void Notifier::runOnce() {
     notification.source = "";
     notification.destination = fileSystemEvent.getPath();
 
-    if (event == Event::moved_from || event == Event::moved_from_dir)
+    if(event == Event::modify)
+    {
+        event = catchAllCreations();
+    }
+
+    else if (event == Event::moved_from || event == Event::moved_from_dir)
     {
         event = determineMoveType(notification);
     }
 
     else if(event == Event::create)
     {
+        //catchAllCreations();
         this->watchFile(fileSystemEvent.getPath());
     }
 
     else if(event == Event::create_dir)
     {
+        //catchAllCreations();
         this->watchPathRecursively(fileSystemEvent.getPath());
     }
 
@@ -174,6 +212,13 @@ void Notifier::runOnce() {
     if (eventAndEventObserver == mEventObserver.end()) {
         return;
     }
+
+    notification.destination = correctPath(notification.destination);
+    notification.source = correctPath(notification.source);
+
+    cout << "NOTIFIER\n\n";
+    cout << notification.destination << endl;
+    cout << notification.source << endl << endl;
 
     auto eventObserver = eventAndEventObserver->second;
     eventObserver(notification);

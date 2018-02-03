@@ -87,12 +87,37 @@ void Dropbox::receiveInt(TcpSocket &sock, Dropbox::IntType &data)
     data = ntohl(dataToreceive);
 
 }
-/*
-void Dropbox::receiveInt(IntType &data)
+
+std::string Dropbox::correctPath(std::string path)
 {
-    receiveInt(*this, data);
+    char forbiddenSign = 1;
+    unsigned int pos = static_cast<int>(path.find(forbiddenSign));
+
+    if (std::string::npos == pos)
+    {
+        return path;
+    }
+    else
+    {
+        return path.substr(0, static_cast<unsigned long>(pos - 1));
+    }
 }
-*/
+
+boost::filesystem::path Dropbox::correctPath(boost::filesystem::path path)
+{
+    std::string path2 = path.string();
+    char forbiddenSign = 1;
+    unsigned int pos = static_cast<int>(path2.find(forbiddenSign));
+
+    if (std::string::npos == pos)
+    {
+        return path;
+    }
+    else
+    {
+        return boost::filesystem::path(path2.substr(0, static_cast<unsigned long>(pos - 1)));
+    }
+}
 
 void Dropbox::createDirectory(std::string directoryPath)
 {

@@ -55,7 +55,7 @@ void DropboxClient::sender()
         EventMessage eventMessage = ClientEventReporter::messageQueue.dequeue();
 
         ProtocolEvent event = eventMessage.event;
-        std::string path = eventMessage.destination;
+        std::string path = correctPath(eventMessage.destination);
 
         std::cout << "Sender:\n";
         switch (event)
@@ -91,7 +91,7 @@ void DropboxClient::sender()
             case MOVE:
                 try
                 {
-                    std::string source = eventMessage.source;
+                    std::string source = correctPath(eventMessage.source);
                     std::cout << "senMOVE FROM: " << source << " TO: " << path << std::endl;
 
                     sendMovePathsProcedure(serverSocket, source, path, serverMutex);
@@ -121,7 +121,7 @@ void DropboxClient::sender()
             case COPY:
                 try
                 {
-                    std::string source = eventMessage.source;
+                    std::string source = correctPath(eventMessage.source);
                     std::cout << "senCOPY FROM: " << source << " TO: " << path << std::endl;
 
                     notifier.watchFile(boost::filesystem::path(path));
