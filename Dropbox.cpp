@@ -252,7 +252,7 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
     {
         file.read(buffer, TcpSocket::CHUNK_SIZE);
         sent += sock.sendData(buffer, TcpSocket::CHUNK_SIZE);
-        file.seekg(TcpSocket::CHUNK_SIZE, std::ios::cur);
+        //file.seekg(TcpSocket::CHUNK_SIZE, std::ios::cur);
     }
     if(rest > 0)
     {
