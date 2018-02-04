@@ -73,13 +73,19 @@ echo "Uruchom serwer i klientów"
 read -n1 -r
 sleep 1
 clear
-print_tree 0
+print_tree 1
 echo "Rozmiary plików powinny być dwucyfrowe"
 read -n1 -r
 clear
 
-echo "Usuwanie foldera fff u $client1"
+echo "Usuwanie foldera fff u $client_1"
 rm -r $dir/$client_1/fff
 echo "Czy folder fff został poprawnie usunięty?"
-print_tree
+print_tree 1
+read -n1 -r
+
+echo "Usuwanie foldera bbb u $client_2"
+rm -r $dir/$client_2/bbb
+echo "Czy folder fff został poprawnie usunięty?"
+print_tree 1
 read -n1 -r
