@@ -84,8 +84,8 @@ print_tree 1
 echo "Czy folder fff został poprawnie usunięty?"
 read -n1 -r
 
-echo "Usuwanie foldera bbb u $client_2"
-rm -r $dir/$client_2/bbb
+echo "Usuwanie foldera oko u $client_2"
+rm -r $dir/$client_2/oko
 print_tree 1
 echo "Czy folder fff został poprawnie usunięty?"
 read -n1 -r
