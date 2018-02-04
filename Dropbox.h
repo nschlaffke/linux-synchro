@@ -14,19 +14,28 @@
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <mutex>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <queue>
+#include <utime.h>
 
 class Dropbox
 {
+protected:
+    typedef u_int64_t IntType;
+
 public:
-    enum ProtocolEvent
+    enum ProtocolEvent : IntType
     {
-        NEW_CLIENT, //
-        NEW_FILE, //
-        DELETE, //
-        MOVE, // ???
-        NEW_DIRECTORY, // ???
-        COPY //
+        NEW_CLIENT,
+        NEW_FILE,
+        DELETE,
+        MOVE,
+        NEW_DIRECTORY,
+        COPY,
+        IS_VALID,
+        END_OF_SYNC
     };
     struct EventMessage;
 
@@ -52,8 +61,6 @@ protected:
 
     void moveFile(std::string source, std::string destination);
 
-    typedef uint32_t IntType;
-
     //void sendEvent(ProtocolEvent event);
     void sendEvent(TcpSocket &sock, ProtocolEvent event);
 
@@ -73,7 +80,6 @@ protected:
 
     //void receiveString(std::string &text);
     void receiveString(TcpSocket &sock, std::string &text);
-
 
     std::string generateAbsolutPath(std::string pathToFile);
 
@@ -119,16 +125,17 @@ public:
 
 protected:
     std::string generateRelativePath(std::string path);
-
+    void changeModificationTime(std::string path, Dropbox::IntType time);
+    IntType getModificationTime(string path);
     int getTotalSent();
-
+    bool askIfValid(TcpSocket &socket, std::string path);
+    bool answerIfValid(TcpSocket &socket);
 private:
     int totalSent;
     int totalReceived;
     const int maxStringSize;
 
 };
-
 
 struct Dropbox::EventMessage
 {

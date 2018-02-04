@@ -13,8 +13,6 @@
 DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, const std::string path)
         : Dropbox(path), TcpServer(ip, port), maxClientsNumber(10)
 {}
-
-
 void DropboxServer::run()
 {
     std::vector<ClientData> clientVector(maxClientsNumber);
@@ -30,13 +28,14 @@ void DropboxServer::run()
         sender.detach();
     }
 }
+
 void DropboxServer::clientSender(ClientData &clientData)
 {
     using namespace std;
     TcpSocket client = clientData.sock;
     std::mutex &clientMutex = clientData.sockMutex;
     SafeQueue<EventMessage> &queue = clientData.safeQueue;
-    while(true)
+    while (true)
     {
         EventMessage message = queue.dequeue();
         ProtocolEvent event = message.event;
@@ -113,10 +112,11 @@ void DropboxServer::clientSender(ClientData &clientData)
         }
     }
 }
+
 void DropboxServer::clientReceiver(ClientData &clientData)
 {
     TcpSocket client = clientData.sock;
-    while(true)
+    while (true)
     {
         using namespace std;
         ProtocolEvent tmp;
@@ -124,7 +124,7 @@ void DropboxServer::clientReceiver(ClientData &clientData)
         {
             receiveEvent(client, tmp); /// tutaj usypia
         }
-        catch(std::exception &a)
+        catch (std::exception &a)
         {
             cout << "Terminating clientReceiver: " << a.what();
             return;
@@ -226,32 +226,61 @@ void DropboxServer::clientReceiver(ClientData &clientData)
  */
 void DropboxServer::newClientProcedure(ClientData &clientData)
 {
+    // TODO serwer najpierw sprawdza czy pliku nie ma u klienta, a dopiero potem wysyła
     TcpSocket &sock = clientData.sock;
     std::mutex &clientMutex = clientData.sockMutex;
 
-    if(boost::filesystem::exists(folderPath))
+    if (boost::filesystem::exists(folderPath))
     {
-        if(boost::filesystem::is_directory(folderPath))
+        if (boost::filesystem::is_directory(folderPath))
         {
             boost::filesystem::recursive_directory_iterator it(folderPath, boost::filesystem::symlink_option::recurse);
             boost::filesystem::recursive_directory_iterator end;
 
-            while(it != end)
+            while (it != end)
             {
                 boost::filesystem::path currentPath = *it;
 
-                if(boost::filesystem::is_regular_file(currentPath)){
-                    sendNewFileProcedure(sock, it->path().c_str(), clientMutex);
+                if (boost::filesystem::is_regular_file(currentPath))
+                {
+                    if(!askIfValid(sock, it->path().c_str()))
+                    {
+                        // u klienta plik nie istnieje lub jest starszy, więc go wysyłamy
+                        sendNewFileProcedure(sock, it->path().c_str(), clientMutex);
+                    }
                 }
                 else if (boost::filesystem::is_directory(currentPath))
                 {
+                    // foldery wysyłamy tak czy siak: jak nie ma to sobie utworzy, jak jest to zignoruje
+                    // sprawdzanie tego byloby bardziej kosztowne
                     sendNewDirectoryProcedure(sock, it->path().c_str(), clientMutex);
                 }
                 ++it;
             }
         }
     }
-
+    sendEvent(sock, END_OF_SYNC);Dropbox::ProtocolEvent event;
+    do
+    {
+        receiveEvent(sock, event);
+        std::string file;
+        switch(event)
+        {
+            case NEW_FILE:
+                file = receiveNewFileProcedure(sock, clientMutex);
+                broadcastFile(sock, file, clientMutex);
+                break;
+            case NEW_DIRECTORY:
+                file = receiveNewDircetoryProcedure(sock, clientMutex);
+                broadcastDirectory(sock, file, clientMutex);
+                break;
+            case IS_VALID:
+                answerIfValid(sock);
+                break;
+            case END_OF_SYNC:
+                break;
+        }
+    }while(event != Dropbox::ProtocolEvent::END_OF_SYNC);
     // do listy klientów dodajemy na końcu bo:
     // zanim plik zostanie broadcastowany jest juz w systemie plikow serwera, wiec zostanie wyslany w tej procedurze,
     // a nie chcemy by zostal wyslany 2 razy
@@ -260,6 +289,7 @@ void DropboxServer::newClientProcedure(ClientData &clientData)
     clientsMutex.unlock();
     //
 }
+
 /**
  * wysyła plik do wszystkich klientów oprócz nadawcy
  * @param sender
@@ -269,10 +299,10 @@ void DropboxServer::broadcastFile(TcpSocket sender, std::string path, std::mutex
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for(ClientData &clientData: clientsCopy)
+    for (ClientData &clientData: clientsCopy)
     {
         TcpSocket receiver = clientData.sock;
-        if(sender != receiver)
+        if (sender != receiver)
         {
             EventMessage tmp;
             tmp.event = NEW_FILE;
@@ -292,10 +322,10 @@ void DropboxServer::broadcastDirectory(TcpSocket &sender, std::string &path, std
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for(ClientData &clientData: clients)
+    for (ClientData &clientData: clients)
     {
         TcpSocket receiver = clientData.sock;
-        if(sender != receiver)
+        if (sender != receiver)
         {
             /*
             std::thread t(&DropboxServer::sendNewDirectoryProcedure, this, receiver,
@@ -320,10 +350,10 @@ void DropboxServer::broadcastDeletion(TcpSocket &sender, std::string &path, std:
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for(ClientData &clientData: clients)
+    for (ClientData &clientData: clients)
     {
         TcpSocket receiver = clientData.sock;
-        if(sender != receiver)
+        if (sender != receiver)
         {
             EventMessage tmp;
             tmp.event = DELETE;
@@ -343,10 +373,10 @@ void DropboxServer::broadcastMove(TcpSocket &sender, std::string &file1, std::st
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for(ClientData &clientData: clients)
+    for (ClientData &clientData: clients)
     {
         TcpSocket receiver = clientData.sock;
-        if(sender != receiver)
+        if (sender != receiver)
         {
             EventMessage tmp;
             tmp.event = MOVE;
@@ -363,10 +393,10 @@ void DropboxServer::broadcastCopy(TcpSocket &sender, std::string &file1, std::st
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for(ClientData &clientData: clients)
+    for (ClientData &clientData: clients)
     {
         TcpSocket receiver = clientData.sock;
-        if(sender != receiver)
+        if (sender != receiver)
         {
             EventMessage tmp;
             tmp.event = COPY;

@@ -287,6 +287,11 @@ void ClientEventReporter::requestMoveTo(Notification notification)
 
 bool ClientEventReporter::isIgnored(boost::filesystem::path path)
 {
+    auto it2 = permanentlyIgnored.find(path.string());
+    if(it2 != permanentlyIgnored.end())
+    {
+        return true;
+    }
     auto it = ignoredPaths.find(path.string());
     if(it == ignoredPaths.end())
     {

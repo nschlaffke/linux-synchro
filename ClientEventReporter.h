@@ -50,6 +50,7 @@ public:
 
     static SafeSet<FileInfo> allFilesInfo;
     static SafeSet<std::string> ignoredPaths; // fullPaths
+    static SafeSet<std::string> permanentlyIgnored;
     static SafeQueue<Dropbox::EventMessage> messageQueue;
 
     ClientEventReporter(boost::filesystem::path observedDirectory);

@@ -10,11 +10,7 @@
 DropboxClient::DropboxClient(const std::string &ip, unsigned short port, const std::string folderPath)
         : Dropbox(folderPath), TcpSocket(ip, port), serverSocket(*this), folderPath(folderPath)
 {
-    notifier = Notifier()
-            .watchPathRecursively(boost::filesystem::path(folderPath))
-            .ignoreFileOnce("file")
-            .onEvents({Event::remove, /*Event::remove_self,*/ Event::remove_dir, Event::remove_self_dir, Event::create, Event::create_dir, Event::modify,
-                       Event::outward_move, Event::internal_move, Event::moved_to, Event::moved_to_dir}, ClientEventReporter::chooseRequest);
+    // koniecznie może być przywrócenie notifiera w to miejsce
 }
 
 void DropboxClient::run()
@@ -24,6 +20,12 @@ void DropboxClient::run()
         throw DropboxException("Error: Client not connected\n");
     }
     newClientProcedure();
+
+    notifier = Notifier()
+            .watchPathRecursively(boost::filesystem::path(folderPath))
+            .ignoreFileOnce("file")
+            .onEvents({Event::remove, /*Event::remove_self,*/ Event::remove_dir, Event::remove_self_dir, Event::create, Event::create_dir, Event::modify,
+                       Event::outward_move, Event::internal_move, Event::moved_to, Event::moved_to_dir}, ClientEventReporter::chooseRequest);
 
     std::thread t(&Notifier::run, notifier);
     std::thread s(&DropboxClient::sender, this);
@@ -41,7 +43,58 @@ void DropboxClient::run()
  */
 void DropboxClient::newClientProcedure()
 {
+    // TODO serwer z klientem porównują swoje pliki
     sendEvent(*this, NEW_CLIENT);
+    Dropbox::ProtocolEvent event;
+    do
+    {
+        receiveEvent(serverSocket, event);
+        switch(event)
+        {
+            case NEW_FILE:
+                receiveNewFileProcedure(serverSocket, serverMutex);
+                break;
+            case NEW_DIRECTORY:
+                receiveNewDircetoryProcedure(serverSocket, serverMutex);
+                break;
+            case IS_VALID:
+                answerIfValid(serverSocket);
+                break;
+            case END_OF_SYNC:
+                break;
+        }
+    }while(event != Dropbox::ProtocolEvent::END_OF_SYNC);
+    // teraz klient wysyła swoje pliki
+    if (boost::filesystem::exists(folderPath))
+    {
+        if (boost::filesystem::is_directory(folderPath))
+        {
+            boost::filesystem::recursive_directory_iterator it(folderPath, boost::filesystem::symlink_option::recurse);
+            boost::filesystem::recursive_directory_iterator end;
+
+            while (it != end)
+            {
+                boost::filesystem::path currentPath = *it;
+
+                if (boost::filesystem::is_regular_file(currentPath))
+                {
+                    if(!askIfValid(serverSocket, it->path().c_str()))
+                    {
+                        // u klienta plik nie istnieje lub jest starszy, więc go wysyłamy
+                        sendNewFileProcedure(sock, it->path().c_str(), serverMutex);
+                    }
+                }
+                else if (boost::filesystem::is_directory(currentPath))
+                {
+                    // foldery wysyłamy tak czy siak: jak nie ma to sobie utworzy, jak jest to zignoruje
+                    // sprawdzanie tego byloby bardziej kosztowne
+                    sendNewDirectoryProcedure(sock, it->path().c_str(), serverMutex);
+                }
+                ++it;
+            }
+        }
+    }
+    sendEvent(serverSocket, END_OF_SYNC);
 }
 
 /**
@@ -146,7 +199,7 @@ void DropboxClient::sender()
 void DropboxClient::receiver()
 {
     ProtocolEvent event;
-    std::string *files = new string [2];
+    std::string *files = new std::string[2];
     while (true)
     {
         std::cout << "Received: " << getTotalReceived() << std::endl;
@@ -231,7 +284,6 @@ void DropboxClient::receiver()
                 break;
         }
     }
-
     delete[] files;
 }
 

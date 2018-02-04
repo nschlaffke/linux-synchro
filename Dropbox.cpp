@@ -4,6 +4,7 @@
 // Created by ns on 10.01.18.
 
 SafeSet<std::string> ClientEventReporter::ignoredPaths;
+SafeSet<std::string> ClientEventReporter::permanentlyIgnored;
 SafeSet<ClientEventReporter::FileInfo> ClientEventReporter::allFilesInfo;
 
 void Dropbox::sendEvent(TcpSocket &sock, ProtocolEvent event)
@@ -20,6 +21,7 @@ void Dropbox::sendEvent(TcpSocket &sock, ProtocolEvent event)
         dataPointer += sent;
     } while (bytes > 0);
 }
+
 /*
 void Dropbox::sendEvent(ProtocolEvent data)
 {
@@ -96,8 +98,7 @@ std::string Dropbox::correctPath(std::string path)
     if (std::string::npos == pos)
     {
         return path;
-    }
-    else
+    } else
     {
         return path.substr(0, static_cast<unsigned long>(pos - 1));
     }
@@ -112,8 +113,7 @@ boost::filesystem::path Dropbox::correctPath(boost::filesystem::path path)
     if (std::string::npos == pos)
     {
         return path;
-    }
-    else
+    } else
     {
         return boost::filesystem::path(path2.substr(0, static_cast<unsigned long>(pos - 1)));
     }
@@ -121,7 +121,7 @@ boost::filesystem::path Dropbox::correctPath(boost::filesystem::path path)
 
 void Dropbox::createDirectory(std::string directoryPath)
 {
-    if(boost::filesystem::exists(boost::filesystem::path(directoryPath)))
+    if (boost::filesystem::exists(boost::filesystem::path(directoryPath)))
     {
         return;
     }
@@ -153,11 +153,10 @@ void Dropbox::deleteFiles(std::string filePath)
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = folderPath;
     struct stat result;
-    if(stat(fileInfo.path.string().c_str(), &result) == 0)
+    if (stat(fileInfo.path.string().c_str(), &result) == 0)
     {
         fileInfo.modificationTime = result.st_mtim;
-    }
-    else
+    } else
     {
         throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
     }
@@ -180,9 +179,9 @@ void Dropbox::moveFile(std::string source, std::string destination)
         throw DropboxException("Move operation has failed");
     }
 
-    for(auto it = ClientEventReporter::allFilesInfo.begin(); it != ClientEventReporter::allFilesInfo.end(); ++it)
+    for (auto it = ClientEventReporter::allFilesInfo.begin(); it != ClientEventReporter::allFilesInfo.end(); ++it)
     {
-        if(it->path == sourcePath)
+        if (it->path == sourcePath)
         {
             ClientEventReporter::allFilesInfo.erase(it);
         }
@@ -191,17 +190,17 @@ void Dropbox::moveFile(std::string source, std::string destination)
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = destinationPath;
     struct stat result;
-    if(stat(fileInfo.path.string().c_str(), &result) == 0)
+    if (stat(fileInfo.path.string().c_str(), &result) == 0)
     {
         fileInfo.modificationTime = result.st_mtim;
-    }
-    else
+    } else
     {
         throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
     }
 
     ClientEventReporter::allFilesInfo.insert(fileInfo);
 }
+
 /*
 void Dropbox::sendString(std::string text)
 {
@@ -211,13 +210,14 @@ void Dropbox::sendString(std::string text)
 void Dropbox::sendString(TcpSocket &sock, std::string text)
 {
     int textLen = text.length();
-    if(textLen >= maxStringSize)
+    if (textLen >= maxStringSize)
     {
         throw DropboxException("Dropbox::sendString error: too long string");
     }
-    const char* pointer = text.c_str();
+    const char *pointer = text.c_str();
     totalSent += sock.sendData(pointer, maxStringSize);
 }
+
 /*
 void Dropbox::receiveString(std::string &text)
 {
@@ -231,6 +231,7 @@ void Dropbox::receiveString(TcpSocket &sock, std::string &text)
     std::string tmp(buffer);
     text = tmp;
 }
+
 /*
 void Dropbox::sendFile(const std::string fileName)
 {
@@ -254,7 +255,7 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
         sent += sock.sendData(buffer, TcpSocket::CHUNK_SIZE);
         //file.seekg(TcpSocket::CHUNK_SIZE, std::ios::cur);
     }
-    if(rest > 0)
+    if (rest > 0)
     {
         file.read(buffer, rest);
         sent += sock.sendData(buffer, rest);
@@ -262,6 +263,7 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
     totalSent += fileSize;
     file.close();
 }
+
 /*
 void Dropbox::receiveFile(const std::string fileName, size_t fileSize)
 {
@@ -272,7 +274,7 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
 {
     std::ofstream file;
     file.open(fileName, std::ios::binary | std::ios::out | std::ios::trunc);
-    if(!file.good())
+    if (!file.good())
     {
         throw DropboxException("Error creating file");
     }
@@ -292,11 +294,10 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = boost::filesystem::path(fileName);
     struct stat result;
-    if(stat(fileInfo.path.string().c_str(), &result) == 0)
+    if (stat(fileInfo.path.string().c_str(), &result) == 0)
     {
         fileInfo.modificationTime = result.st_mtim;
-    }
-    else
+    } else
     {
         throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
     }
@@ -308,29 +309,29 @@ void Dropbox::deleteFile(std::string fileName)
 {
     boost::filesystem::path path(fileName);
 
-    if(boost::filesystem::exists(path))
+    if (boost::filesystem::exists(path))
     {
-        if(boost::filesystem::is_directory(path))
+        if (boost::filesystem::is_directory(path))
         {
             boost::filesystem::remove_all(path);
-        }
-        else
+        } else
         {
             int result = remove(fileName.c_str());
-            if(result != 0)
+            if (result != 0)
             {
                 throw DropboxException("Error deleting file: " + fileName);
             }
         }
-    }
-    else
+    } else
     {
-        throw std::runtime_error("It is impossible to delete the file or directory, because the path does not exist. Path: " + fileName + "\n");
+        throw std::runtime_error(
+                "It is impossible to delete the file or directory, because the path does not exist. Path: " + fileName +
+                "\n");
     }
 
-    for(auto it = ClientEventReporter::allFilesInfo.begin(); it != ClientEventReporter::allFilesInfo.end(); ++it)
+    for (auto it = ClientEventReporter::allFilesInfo.begin(); it != ClientEventReporter::allFilesInfo.end(); ++it)
     {
-        if(it->path == path)
+        if (it->path == path)
         {
             ClientEventReporter::allFilesInfo.erase(it);
         }
@@ -339,19 +340,18 @@ void Dropbox::deleteFile(std::string fileName)
 
 void Dropbox::copyFile(std::string source, std::string destination)
 {
-    std::ifstream  sourceFile(source.c_str(), std::ios::binary | std::ios::in);
-    std::ofstream  destinationFile(destination.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
+    std::ifstream sourceFile(source.c_str(), std::ios::binary | std::ios::in);
+    std::ofstream destinationFile(destination.c_str(), std::ios::binary | std::ios::out | std::ios::trunc);
 
     destinationFile << sourceFile.rdbuf();
 
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = boost::filesystem::path(destination);
     struct stat result;
-    if(stat(fileInfo.path.string().c_str(), &result) == 0)
+    if (stat(fileInfo.path.string().c_str(), &result) == 0)
     {
         fileInfo.modificationTime = result.st_mtim;
-    }
-    else
+    } else
     {
         throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
     }
@@ -397,6 +397,7 @@ int Dropbox::getTotalReceived() const
  */
 void Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex)
 {
+    // todo wysyłać datę utworzenia pliku
     clientMutex.lock();
     sendEvent(sock, NEW_FILE);
     std::__cxx11::string relativePath = generateRelativePath(filePath);
@@ -404,6 +405,8 @@ void Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mu
     IntType fileSize = getFileSize(filePath);
     sendInt(sock, fileSize);
     sendFile(sock, filePath);
+    Dropbox::IntType modificationTime = static_cast<IntType>(getModificationTime(filePath));
+    sendInt(sock, modificationTime);
     clientMutex.unlock();
 }
 
@@ -443,7 +446,8 @@ void Dropbox::sendDeletionPathProcedure(TcpSocket sock, std::string directoryPat
  * @param sock
  * @param directoryPath ścieżka BEZWZGLĘDNA
  */
-void Dropbox::sendMovePathsProcedure(TcpSocket sock, std::string sourcePath, std::string destinationPath, std::mutex &clientMutex)
+void Dropbox::sendMovePathsProcedure(TcpSocket sock, std::string sourcePath, std::string destinationPath,
+                                     std::mutex &clientMutex)
 {
     clientMutex.lock();
     sendEvent(sock, MOVE);
@@ -454,7 +458,8 @@ void Dropbox::sendMovePathsProcedure(TcpSocket sock, std::string sourcePath, std
     clientMutex.unlock();
 }
 
-void Dropbox::sendCopyPathsProcedure(TcpSocket sock, std::string sourcePath, std::string destinationPath, std::mutex &clientMutex)
+void Dropbox::sendCopyPathsProcedure(TcpSocket sock, std::string sourcePath, std::string destinationPath,
+                                     std::mutex &clientMutex)
 {
     clientMutex.lock();
     sendEvent(sock, COPY);
@@ -486,7 +491,7 @@ std::string Dropbox::receiveDeletionPathProcedure(TcpSocket &serverSocket, std::
  * 2. odbiera ścieżkę docelową pliku
  * 3. wykonuję operację move
  */
-std::string* Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
+std::string *Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
 {
     std::string *paths = new std::string[2];
 
@@ -504,7 +509,7 @@ std::string* Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mu
     return paths;
 }
 
-std::string* Dropbox::receiveCopyPathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
+std::string *Dropbox::receiveCopyPathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
 {
     std::string *paths = new std::string[2];
 
@@ -537,6 +542,9 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
     ClientEventReporter::ignoredPaths.insert(fileName);
     receiveInt(serverSocket, size);
     receiveFile(serverSocket, fileName, size);
+    Dropbox::IntType modificationTime;
+    receiveInt(serverSocket, modificationTime);
+    changeModificationTime(fileName.c_str(), modificationTime);
     clientMutex.unlock();
     return fileName;
 }
@@ -555,4 +563,83 @@ std::string Dropbox::receiveNewDircetoryProcedure(TcpSocket &serverSocket, std::
     clientMutex.unlock();
     createDirectory(folder);
     return folder;
+}
+
+Dropbox::IntType Dropbox::getModificationTime(std::string path)
+{
+    struct stat s;
+    ClientEventReporter::permanentlyIgnored.insert(path);
+    if (stat(path.c_str(), &s) != 0)
+        throw DropboxException("Couldn't determine file modification time");
+    changeModificationTime(path, static_cast<Dropbox::IntType>(s.st_mtim.tv_sec));
+    ClientEventReporter::permanentlyIgnored.erase(path);
+    return static_cast<Dropbox::IntType>(s.st_mtim.tv_sec);
+}
+
+void Dropbox::changeModificationTime(std::string path, Dropbox::IntType time)
+{
+    utimbuf u;
+    u.modtime = static_cast<time_t>(time);
+    u.actime = 0;
+    ClientEventReporter::permanentlyIgnored.insert(path);
+    if (utime(path.c_str(), &u) == -1)
+        throw DropboxException("Failed to change file's modification time");
+    ClientEventReporter::permanentlyIgnored.erase(path);
+}
+
+/* sprawdza czy plik po drugiej stronie istnieje i czy nie jest starszy
+   wysyla:
+   1. event
+   2. sciezke do pliku
+   3. date modyfikacji
+   odbiera:
+   1. inta z 0 lub 1
+*/
+bool Dropbox::askIfValid(TcpSocket &socket, std::string path)
+{
+    sendEvent(socket, Dropbox::ProtocolEvent::IS_VALID);
+    std::string relativePath = generateRelativePath(path);
+    sendString(socket, relativePath);
+    Dropbox::IntType modificationTime = getModificationTime(path);
+    sendInt(socket, modificationTime);
+    Dropbox::IntType isValid;
+    receiveInt(socket, isValid);
+    if (isValid == 1)
+    {
+        return true;
+    }
+    if (isValid == 0)
+    {
+        return false;
+    } else
+    {
+        throw Dropbox::DropboxException("Protocol error");
+    }
+}
+
+bool Dropbox::answerIfValid(TcpSocket &socket)
+{
+    std::string path;
+    receiveString(socket, path);
+    path = generateAbsolutPath(path);
+
+    Dropbox::IntType remoteModificationTime;
+    receiveInt(socket, remoteModificationTime);
+
+    Dropbox::IntType isValid = 0;
+    // tutaj sprawdzamy czy istnieje i czy nie jest starszy
+    if (boost::filesystem::exists(path))
+    {
+        Dropbox::IntType localModificationTime = getModificationTime(path);
+        if(localModificationTime >= remoteModificationTime)
+        {
+            isValid = 1;
+        }
+        else
+        {
+            deleteFile(path);
+        }
+    }
+    sendInt(socket, isValid);
+    return static_cast<bool>(isValid);
 }
