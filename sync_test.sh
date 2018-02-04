@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 function print_tree
 {
-    tree -s $dir/$client_1 $dir/$client_2 $dir/$server
     if test "$#" -eq 1; then
         sleep $1
     else
         sleep 0.2
     fi
+    tree -s $dir/$client_1 $dir/$client_2 $dir/$server
 }
 
 function make_file
@@ -73,19 +73,19 @@ echo "Uruchom serwer i klientów"
 read -n1 -r
 sleep 1
 clear
-print_tree 1
 echo "Rozmiary plików powinny być dwucyfrowe"
+print_tree 1
 read -n1 -r
 clear
 
 echo "Usuwanie foldera fff u $client_1"
 rm -r $dir/$client_1/fff
-echo "Czy folder fff został poprawnie usunięty?"
 print_tree 1
+echo "Czy folder fff został poprawnie usunięty?"
 read -n1 -r
 
 echo "Usuwanie foldera bbb u $client_2"
 rm -r $dir/$client_2/bbb
-echo "Czy folder fff został poprawnie usunięty?"
 print_tree 1
+echo "Czy folder fff został poprawnie usunięty?"
 read -n1 -r

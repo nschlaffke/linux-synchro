@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 function print_tree 
 {
-    tree -s $dir/$client_1 $dir/$client_2 $dir/$server
     if test "$#" -eq 1; then
         sleep $1 
     else
         sleep 0.2
     fi
+    tree -s $dir/$client_1 $dir/$client_2 $dir/$server
 }
 # sprawdzamy czy tree jest zainstalowane
 
