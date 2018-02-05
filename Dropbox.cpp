@@ -494,7 +494,6 @@ std::string Dropbox::receiveDeletionPathProcedure(TcpSocket &serverSocket, std::
 std::string *Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mutex &clientMutex)
 {
     std::string *paths = new std::string[2];
-
     clientMutex.lock();
     std::string fileName;
     receiveString(serverSocket, paths[0]);
@@ -631,7 +630,11 @@ bool Dropbox::answerIfValid(TcpSocket &socket)
     if (boost::filesystem::exists(path))
     {
         Dropbox::IntType localModificationTime = getModificationTime(path);
-        if(localModificationTime >= remoteModificationTime)
+        if(boost::filesystem::is_directory(path))
+        {
+            isValid = 1;
+        }
+        else if(localModificationTime >= remoteModificationTime)
         {
             isValid = 1;
         }

@@ -69,7 +69,7 @@ size_t TcpSocket::receiveData(char *buffer, size_t bufferSize)
 
     if (result == -1)
     {
-        throw SocketException(POSIXError::getErrorMessage("Failed to read"));
+        throw SocketException(POSIXError::getErrorMessage("Failed to read: "));
     } else
         return static_cast<size_t>(result);
 }
@@ -79,7 +79,7 @@ size_t TcpSocket::sendData(const char data[], size_t size)
     ssize_t result = write(sock.getVal(), data, size);
     if (result == -1)
     {
-        throw SocketException(POSIXError::getErrorMessage("Failed to write"));
+        throw SocketException(POSIXError::getErrorMessage("Failed to write: "));
     } else
         return static_cast<size_t>(result);
 }

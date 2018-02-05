@@ -5,14 +5,15 @@
 #include <iostream>
 #include <thread>
 #include <boost/filesystem.hpp>
+#include <csignal>
 #include "DropboxServer.h"
 
-// TODO mutex na system plikow
-// TODO sprawdzanie czy klient sie nie odlaczyl
-// TODO ogarnac badziewna liste klientow
 DropboxServer::DropboxServer(const std::string &ip, const unsigned short port, const std::string path)
-        : Dropbox(path), TcpServer(ip, port), maxClientsNumber(10)
-{}
+        : Dropbox(path), TcpServer(ip, port), maxClientsNumber(100)
+{
+    signal(SIGPIPE, SIG_IGN);
+}
+
 void DropboxServer::run()
 {
     std::vector<ClientData> clientVector(maxClientsNumber);
@@ -20,8 +21,17 @@ void DropboxServer::run()
     while (true)
     {
         TcpSocket tmp = doAccept();
-        clientVectorIterator++;
+        do
+        {
+            clientVectorIterator++;
+            if (clientVectorIterator == clientVector.end())
+            {
+                clientVectorIterator = clientVector.begin();
+            }
+        } while (clientVectorIterator->isAlive);
+        clientVectorIterator->safeQueue.clear();
         clientVectorIterator->sock = tmp;
+        clientVectorIterator->isAlive = true;
         std::thread receiver(&DropboxServer::clientReceiver, this, std::ref(*clientVectorIterator));
         std::thread sender(&DropboxServer::clientSender, this, std::ref(*clientVectorIterator));
         receiver.detach();
@@ -46,36 +56,39 @@ void DropboxServer::clientSender(ClientData &clientData)
             case NEW_FILE:
                 try
                 {
-                    cout << "senSENDING NEW FILE: " << file << endl;
+                    cout << "SENDING NEW FILE: " << file << endl;
                     sendNewFileProcedure(client, file, clientMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "senNEW_FILE error\nTerminating clientReceiver: " << a.what();
+                    cout << "NEW_FILE error\nTerminating clientSender: " << a.what();
+                    terminateClientReceiver(clientData);
                     return;
                 }
                 break;
             case NEW_DIRECTORY:
                 try
                 {
-                    cout << "senSENDING NEW DIRECTORY: " << file << endl;
+                    cout << "SENDING NEW DIRECTORY: " << file << endl;
                     sendNewDirectoryProcedure(client, file, clientMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "senNEW_DIRECTORY error\nTerminating clientReceiver: " << a.what();
+                    cout << "NEW_DIRECTORY error\nTerminating clientSender: " << a.what();
+                    terminateClientReceiver(clientData);
                     return;
                 }
                 break;
             case DELETE:
                 try
                 {
-                    cout << "senSENDING DELETION REQUEST: " << file << endl;
+                    cout << "SENDING DELETION REQUEST: " << file << endl;
                     sendDeletionPathProcedure(client, file, clientMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "senDELETION error\nTerminating clientReceiver: " << a.what();
+                    cout << "DELETION error\nTerminating clientReceiverSender: " << a.what();
+                    terminateClientReceiver(clientData);
                     return;
                 }
 
@@ -83,12 +96,13 @@ void DropboxServer::clientSender(ClientData &clientData)
             case MOVE:
                 try
                 {
-                    cout << "senSENDING MOVE REQUEST FROM: " << correctPath(message.source) << " TO: " << file << endl;
+                    cout << "SENDING MOVE REQUEST FROM: " << correctPath(message.source) << " TO: " << file << endl;
                     sendMovePathsProcedure(client, correctPath(message.source), file, clientMutex);
                 }
                 catch (std::exception &a)
                 {
-                    cout << "senMOVE error\nTerminating clientReceiver: " << a.what();
+                    cout << "MOVE error\nTerminating clientSender: " << a.what();
+                    terminateClientReceiver(clientData);
                     return;
                 }
                 break;
@@ -101,12 +115,17 @@ void DropboxServer::clientSender(ClientData &clientData)
                 }
                 catch (std::exception &a)
                 {
-                    cout << "senCOPY error\nTerminating clientReceiver: " << a.what();
+                    cout << "COPY error\nTerminating clientSender: " << a.what();
+                    terminateClientReceiver(clientData);
                     return;
                 }
                 break;
+            case TERMINATE:
+                return;
+                break;
             default:
-                cout << "senPROTOCOL error\n Terminating clientReceiver\n";
+                cout << "PROTOCOL error\n Terminating clientSender\n";
+                terminateClientReceiver(clientData);
                 return;
                 break;
         }
@@ -226,7 +245,6 @@ void DropboxServer::clientReceiver(ClientData &clientData)
  */
 void DropboxServer::newClientProcedure(ClientData &clientData)
 {
-    // TODO serwer najpierw sprawdza czy pliku nie ma u klienta, a dopiero potem wysyła
     TcpSocket &sock = clientData.sock;
     std::mutex &clientMutex = clientData.sockMutex;
 
@@ -243,28 +261,29 @@ void DropboxServer::newClientProcedure(ClientData &clientData)
 
                 if (boost::filesystem::is_regular_file(currentPath))
                 {
-                    if(!askIfValid(sock, it->path().c_str()))
+                    if (!askIfValid(sock, it->path().c_str()))
                     {
                         // u klienta plik nie istnieje lub jest starszy, więc go wysyłamy
                         sendNewFileProcedure(sock, it->path().c_str(), clientMutex);
                     }
-                }
-                else if (boost::filesystem::is_directory(currentPath))
+                } else if (boost::filesystem::is_directory(currentPath))
                 {
-                    // foldery wysyłamy tak czy siak: jak nie ma to sobie utworzy, jak jest to zignoruje
-                    // sprawdzanie tego byloby bardziej kosztowne
-                    sendNewDirectoryProcedure(sock, it->path().c_str(), clientMutex);
+                    if (!askIfValid(sock, it->path().c_str()))
+                    {
+                        sendNewDirectoryProcedure(sock, it->path().c_str(), clientMutex);
+                    }
                 }
                 ++it;
             }
         }
     }
-    sendEvent(sock, END_OF_SYNC);Dropbox::ProtocolEvent event;
+    sendEvent(sock, END_OF_SYNC);
+    Dropbox::ProtocolEvent event;
     do
     {
         receiveEvent(sock, event);
         std::string file;
-        switch(event)
+        switch (event)
         {
             case NEW_FILE:
                 file = receiveNewFileProcedure(sock, clientMutex);
@@ -279,11 +298,11 @@ void DropboxServer::newClientProcedure(ClientData &clientData)
                 break;
             case END_OF_SYNC:
                 break;
+            default:
+                throw DropboxException("Protocol error");
+                break;
         }
-    }while(event != Dropbox::ProtocolEvent::END_OF_SYNC);
-    // do listy klientów dodajemy na końcu bo:
-    // zanim plik zostanie broadcastowany jest juz w systemie plikow serwera, wiec zostanie wyslany w tej procedurze,
-    // a nie chcemy by zostal wyslany 2 razy
+    } while (event != Dropbox::ProtocolEvent::END_OF_SYNC);
     clientsMutex.lock();
     clients.push_back(std::ref(clientData));
     clientsMutex.unlock();
@@ -296,11 +315,16 @@ void DropboxServer::newClientProcedure(ClientData &clientData)
  */
 void DropboxServer::broadcastFile(TcpSocket sender, std::string path, std::mutex &clientMutex)
 {
+    // TODO sprawdzanie czy klient nie umarł
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
     for (ClientData &clientData: clientsCopy)
     {
+        if (!clientData.isAlive)
+        {
+            continue;
+        }
         TcpSocket receiver = clientData.sock;
         if (sender != receiver)
         {
@@ -322,7 +346,7 @@ void DropboxServer::broadcastDirectory(TcpSocket &sender, std::string &path, std
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for (ClientData &clientData: clients)
+    for (ClientData &clientData: clientsCopy)
     {
         TcpSocket receiver = clientData.sock;
         if (sender != receiver)
@@ -350,7 +374,7 @@ void DropboxServer::broadcastDeletion(TcpSocket &sender, std::string &path, std:
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for (ClientData &clientData: clients)
+    for (ClientData &clientData: clientsCopy)
     {
         TcpSocket receiver = clientData.sock;
         if (sender != receiver)
@@ -373,7 +397,7 @@ void DropboxServer::broadcastMove(TcpSocket &sender, std::string &file1, std::st
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for (ClientData &clientData: clients)
+    for (ClientData &clientData: clientsCopy)
     {
         TcpSocket receiver = clientData.sock;
         if (sender != receiver)
@@ -393,7 +417,7 @@ void DropboxServer::broadcastCopy(TcpSocket &sender, std::string &file1, std::st
     clientsMutex.lock();
     std::vector<std::reference_wrapper<ClientData> > clientsCopy = clients;
     clientsMutex.unlock();
-    for (ClientData &clientData: clients)
+    for (ClientData &clientData: clientsCopy)
     {
         TcpSocket receiver = clientData.sock;
         if (sender != receiver)
@@ -406,4 +430,10 @@ void DropboxServer::broadcastCopy(TcpSocket &sender, std::string &file1, std::st
             clientData.safeQueue.enqueue(tmp);
         }
     }
+}
+
+void DropboxServer::terminateClientReceiver(ClientData &clientData)
+{
+    clientData.sock.closeSocket();
+    clientData.isAlive = false;
 }

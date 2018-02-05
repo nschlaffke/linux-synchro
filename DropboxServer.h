@@ -33,11 +33,11 @@ private:
     void broadcastDeletion(TcpSocket &sender, std::string &path, std::mutex &clientMutex);
     void broadcastMove(TcpSocket &sender, std::string &file1, std::string &file2, std::mutex &clientMutex);
     void broadcastCopy(TcpSocket &sender, std::string &file1, std::string &file2, std::mutex &clientMutex);
-
     std::vector<ClientData>::iterator clientVectorIterator;
     void clientReceiver(ClientData &clientData);
-
     void clientSender(ClientData &clientData);
+
+    void terminateClientReceiver(ClientData &clientData);
 };
 
 
@@ -46,5 +46,6 @@ struct DropboxServer::ClientData
     std::mutex sockMutex;
     TcpSocket sock;
     SafeQueue<EventMessage> safeQueue;
+    bool isAlive = false;
 };
 #endif //DROPBOX_DROPBOXSERVER_H

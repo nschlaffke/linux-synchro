@@ -15,6 +15,7 @@ class SafeQueue
 public:
     void enqueue(T &element);
     T dequeue();
+    void clear();
 
 private:
     std::queue<T> q;
@@ -41,6 +42,15 @@ T SafeQueue<T>::dequeue()
     T element = q.front();
     q.pop();
     return element;
+}
+
+template <typename T>
+void SafeQueue<T>::clear()
+{
+    while(!q.empty())
+    {
+        q.pop();
+    }
 }
 
 #endif //DROPBOX_SAFEQUEUE_H

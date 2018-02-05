@@ -35,7 +35,8 @@ public:
         NEW_DIRECTORY,
         COPY,
         IS_VALID,
-        END_OF_SYNC
+        END_OF_SYNC,
+        TERMINATE
     };
     struct EventMessage;
 

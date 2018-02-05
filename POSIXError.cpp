@@ -5,7 +5,7 @@
 #include "POSIXError.h"
 std::string POSIXError::getErrorMessage(const std::string description)
 {
-    return description + "\n" +  getString();
+    return description + "\n" +  getString() + "\n";
 }
 
 std::string POSIXError::getString()

@@ -6,7 +6,6 @@
 #include <thread>
 #include "DropboxClient.h"
 
-// TODO jeżeli sender umiera, receiver też musi umrzec -> conditional variable
 DropboxClient::DropboxClient(const std::string &ip, unsigned short port, const std::string folderPath)
         : Dropbox(folderPath), TcpSocket(ip, port), serverSocket(*this), folderPath(folderPath)
 {
@@ -32,6 +31,7 @@ void DropboxClient::run()
     std::thread r(&DropboxClient::receiver, this);
 
     s.join();
+    return;
     r.join();
     t.join();
 }
@@ -43,7 +43,6 @@ void DropboxClient::run()
  */
 void DropboxClient::newClientProcedure()
 {
-    // TODO serwer z klientem porównują swoje pliki
     sendEvent(*this, NEW_CLIENT);
     Dropbox::ProtocolEvent event;
     do
@@ -62,6 +61,9 @@ void DropboxClient::newClientProcedure()
                 break;
             case END_OF_SYNC:
                 break;
+            default:
+                throw DropboxException("Protocol error");
+                break;
         }
     }while(event != Dropbox::ProtocolEvent::END_OF_SYNC);
     // teraz klient wysyła swoje pliki
@@ -69,7 +71,8 @@ void DropboxClient::newClientProcedure()
     {
         if (boost::filesystem::is_directory(folderPath))
         {
-            boost::filesystem::recursive_directory_iterator it(folderPath, boost::filesystem::symlink_option::recurse);
+            boost::filesystem::recursive_directory_iterator
+                    it(folderPath, boost::filesystem::symlink_option::recurse);
             boost::filesystem::recursive_directory_iterator end;
 
             while (it != end)
@@ -86,9 +89,10 @@ void DropboxClient::newClientProcedure()
                 }
                 else if (boost::filesystem::is_directory(currentPath))
                 {
-                    // foldery wysyłamy tak czy siak: jak nie ma to sobie utworzy, jak jest to zignoruje
-                    // sprawdzanie tego byloby bardziej kosztowne
-                    sendNewDirectoryProcedure(sock, it->path().c_str(), serverMutex);
+                    if(!askIfValid(serverSocket, it->path().c_str()))
+                    {
+                        sendNewDirectoryProcedure(sock, it->path().c_str(), serverMutex);
+                    }
                 }
                 ++it;
             }
@@ -187,7 +191,8 @@ void DropboxClient::sender()
                     return;
                 }
                 break;
-            case NEW_CLIENT:
+            default:
+                throw DropboxException("Protocol error");
                 break;
         }
     }
