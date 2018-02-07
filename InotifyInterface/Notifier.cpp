@@ -184,6 +184,18 @@ void Notifier::runOnce() {
     notification.source = "";
     notification.destination = fileSystemEvent.getPath();
 
+    if(notification.destination.filename().string().rfind(".swp") == notification.destination.filename().string().size() - 4)
+    {
+        std::cout << notification.destination.string() << std::endl;
+        notification.destination = notification.destination.remove_filename().string() + '/' + notification.destination.filename().string().substr(1, notification.destination.filename().string().size() - 5);
+        std::cout << notification.destination.string() << std::endl;
+    }
+    else if (notification.destination.filename().string()[0] == '.')
+    {
+        std::cout << "RETURN: " << notification.destination.string() << std::endl;
+        return;
+    }
+
     if(event == Event::modify)
     {
         event = catchAllCreations();
@@ -216,9 +228,10 @@ void Notifier::runOnce() {
     notification.destination = correctPath(notification.destination);
     notification.source = correctPath(notification.source);
 
-    cout << "NOTIFIER\n\n";
+    /*cout << "NOTIFIER\n\n";
     cout << notification.destination << endl;
     cout << notification.source << endl << endl;
+    cout << Notifier::getEventName(notification.event) << endl;*/
 
     auto eventObserver = eventAndEventObserver->second;
     eventObserver(notification);

@@ -23,7 +23,7 @@ void DropboxClient::run()
     notifier = Notifier()
             .watchPathRecursively(boost::filesystem::path(folderPath))
             .ignoreFileOnce("file")
-            .onEvents({Event::remove, /*Event::remove_self,*/ Event::remove_dir, Event::remove_self_dir, Event::create, Event::create_dir, Event::modify,
+            .onEvents({Event::open, Event::close, Event::close_nowrite, Event::close_write, Event::remove, /*Event::remove_self,*/ Event::remove_dir, Event::remove_self_dir, Event::create, Event::create_dir, Event::modify,
                        Event::outward_move, Event::internal_move, Event::moved_to, Event::moved_to_dir}, ClientEventReporter::chooseRequest);
 
     std::thread t(&Notifier::run, notifier);

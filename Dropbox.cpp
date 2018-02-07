@@ -152,6 +152,7 @@ void Dropbox::deleteFiles(std::string filePath)
 
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = folderPath;
+    fileInfo.isOpen = false;
     struct stat result;
     if (stat(fileInfo.path.string().c_str(), &result) == 0)
     {
@@ -189,6 +190,7 @@ void Dropbox::moveFile(std::string source, std::string destination)
 
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = destinationPath;
+    fileInfo.isOpen = false;
     struct stat result;
     if (stat(fileInfo.path.string().c_str(), &result) == 0)
     {
@@ -293,6 +295,7 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
 
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = boost::filesystem::path(fileName);
+    fileInfo.isOpen = false;
     struct stat result;
     if (stat(fileInfo.path.string().c_str(), &result) == 0)
     {
@@ -347,6 +350,7 @@ void Dropbox::copyFile(std::string source, std::string destination)
 
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = boost::filesystem::path(destination);
+    fileInfo.isOpen = false;
     struct stat result;
     if (stat(fileInfo.path.string().c_str(), &result) == 0)
     {
@@ -537,8 +541,19 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
     IntType size;
     receiveString(serverSocket, fileName);
     fileName = generateAbsolutPath(fileName);
+
+    ClientEventReporter::FileInfo fileInfo = ClientEventReporter::findByPath(boost::filesystem::path(fileName));
+    if(!fileInfo.path.string().empty() && fileInfo.isOpen)
+    {
+        std::cout << "A conflict has occured. Path: " << fileName << std::endl;
+        ClientEventReporter::ignoredPaths.insert(fileName); // the first modifiction will be ignored
+        fileName = fileInfo.path.remove_filename().string() + "/." + fileInfo.path.filename().string() + "_conflict_copy";
+        ClientEventReporter::permanentlyIgnored.insert(fileName);
+    }
+
     std::cout << fileName << std::endl;
     ClientEventReporter::ignoredPaths.insert(fileName);
+
     receiveInt(serverSocket, size);
     receiveFile(serverSocket, fileName, size);
     Dropbox::IntType modificationTime;

@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
         // TODO podawanie numeru portu oraz IP z linii poleceń
     }
 
-    string path("/home/ns/semestr5/SK2/Dropbox/test/server_folder");
+    string path("/home/piotr/Desktop/Dropbox/testServer");
     cout << "Running server\nIP: " << ip << " port: " << port << endl;
     DropboxServer dropboxServer(ip, port, path);
     dropboxServer.run();

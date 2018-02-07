@@ -28,23 +28,15 @@ public:
     struct FileInfo
     {
         boost::filesystem::path path;
+        bool isOpen;
         struct timespec modificationTime;
         friend bool operator==(const FileInfo& first, const FileInfo& second){
             return first.path == second.path &&
-                   first.modificationTime.tv_sec == second.modificationTime.tv_sec &&
-                   first.modificationTime.tv_nsec == second.modificationTime.tv_nsec;
+                   first.modificationTime.tv_sec == second.modificationTime.tv_sec;
         }
 
         friend bool operator<(const FileInfo& first, const FileInfo& second){
-
-            if(first.modificationTime.tv_sec != second.modificationTime.tv_sec)
-            {
-                return first.modificationTime.tv_sec < second.modificationTime.tv_sec;
-            }
-            else
-            {
-                return first.modificationTime.tv_nsec < second.modificationTime.tv_nsec;
-            }
+            return first.modificationTime.tv_sec < second.modificationTime.tv_sec;
         }
     };
 
@@ -55,6 +47,8 @@ public:
 
     ClientEventReporter(boost::filesystem::path observedDirectory);
     static bool checkIfSameFiles(boost::filesystem::path path1, boost::filesystem::path path2);
+    static void saveAsClosed(Notification notification);
+    static void saveAsOpen(Notification notification);
     static void makeRequest(Notification notification, Dropbox::ProtocolEvent protocolEvent);
     static bool checkIfCopied(Notification &notification);
     static void requestCreation(Notification notificationTo);
@@ -62,6 +56,21 @@ public:
     static void requestMoveFrom(Notification notification);
     static void requestMoveTo(Notification notification);
     static void chooseRequest(Notification notification);
+
+    static FileInfo findByPath(boost::filesystem::path path)
+    {
+        for(FileInfo fileInfo: allFilesInfo){
+            if (fileInfo.path == path)
+            {
+                return fileInfo;
+            }
+        }
+
+        FileInfo empty;
+        empty.path = boost::filesystem::path("");
+
+        return empty;
+    }
 
 private:
 
@@ -72,8 +81,6 @@ private:
     static int getFileSize(const char* filename);
     static bool isIgnored(boost::filesystem::path path);
     void collectFilePaths(boost::filesystem::path dir);
-
-
 };
 
 #endif //DROPBOX_CLIENTEVENTREPORTER_H

@@ -42,6 +42,7 @@ void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
 
             FileInfo fileInfo;
             fileInfo.path = path;
+            fileInfo.isOpen = false;
 
             if(stat(fileInfo.path.string().c_str(), &result) == 0)
             {
@@ -60,6 +61,7 @@ void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
                 if(boost::filesystem::is_regular_file(currentPath)){
                     FileInfo fileInfo;
                     fileInfo.path = currentPath;
+                    fileInfo.isOpen = false;
                     if(stat(fileInfo.path.string().c_str(), &result) == 0)
                     {
                         fileInfo.modificationTime = result.st_mtim;
@@ -80,6 +82,53 @@ void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
     {
         throw runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
     }
+}
+
+/*ClientEventReporter::FileInfo ClientEventReporter::findByPath(boost::filesystem::path path)
+{
+    for(FileInfo fileInfo: ClientEventReporter::allFilesInfo){
+        if (fileInfo.path == path)
+        {
+            return fileInfo;
+        }
+    }
+
+    FileInfo empty;
+    empty.path = boost::filesystem::path("");
+
+    return empty;
+}*/
+
+void ClientEventReporter::saveAsClosed(Notification notification)
+{
+    std::cout << "Closed\n";
+    FileInfo fileInfo = findByPath(notification.destination);
+    std::cout << fileInfo.path.string() << std::endl;
+
+    if(fileInfo.path.string().empty())
+    {
+        throw runtime_error("There is no info about the file");
+    }
+
+    ClientEventReporter::allFilesInfo.erase(fileInfo);
+    fileInfo.isOpen = false;
+    ClientEventReporter::allFilesInfo.insert(fileInfo);
+}
+
+void ClientEventReporter::saveAsOpen(Notification notification)
+{
+    std::cout << "Opened\n";
+    FileInfo fileInfo = findByPath(notification.destination);
+    std::cout << fileInfo.path.string() << std::endl;
+
+    if(fileInfo.path.string().empty())
+    {
+        throw runtime_error("There is no info about the file");
+    }
+
+    ClientEventReporter::allFilesInfo.erase(fileInfo);
+    fileInfo.isOpen = true;
+    ClientEventReporter::allFilesInfo.insert(fileInfo);
 }
 
 void ClientEventReporter::makeRequest(Notification notification, Dropbox::ProtocolEvent protocolEvent) //deletion = moved_from, self-deletion
@@ -136,6 +185,7 @@ bool ClientEventReporter::checkIfCopied(Notification &notification)
     struct stat result;
 
     fileInfo.path = notification.destination;
+    fileInfo.isOpen = false;
     if(stat(fileInfo.path.string().c_str(), &result) == 0)
     {
         fileInfo.modificationTime = result.st_mtim;
@@ -177,6 +227,7 @@ void ClientEventReporter::requestCreation(Notification notification) //creation,
     struct stat result;
 
     fileInfo.path = notification.destination;
+    fileInfo.isOpen = false;
     if(stat(fileInfo.path.string().c_str(), &result) == 0)
     {
         fileInfo.modificationTime = result.st_mtim;
@@ -233,6 +284,7 @@ bool ClientEventReporter::isInternalMove(Notification &notification)
     struct stat result;
 
     fileInfo.path = notification.destination;
+    fileInfo.isOpen = false;
     if(stat(fileInfo.path.string().c_str(), &result) == 0)
     {
         fileInfo.modificationTime = result.st_mtim;
@@ -287,6 +339,12 @@ void ClientEventReporter::requestMoveTo(Notification notification)
 
 bool ClientEventReporter::isIgnored(boost::filesystem::path path)
 {
+
+    if(path.filename().string()[0]  == '.')
+    {
+        return true;
+    }
+
     auto it2 = permanentlyIgnored.find(path.string());
     if(it2 != permanentlyIgnored.end())
     {
@@ -317,6 +375,16 @@ void ClientEventReporter::chooseRequest(Notification notification)
 
     switch(notification.event)
     {
+        case Event::open:
+            saveAsOpen(notification);
+            break;
+
+        case Event::close:
+        case Event::close_nowrite:
+        case Event::close_write:
+            saveAsClosed(notification);
+            break;
+
         case Event::remove:
         case Event::remove_self:
         case Event::remove_dir:
