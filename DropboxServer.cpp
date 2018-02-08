@@ -245,6 +245,7 @@ void DropboxServer::clientReceiver(ClientData &clientData)
  */
 void DropboxServer::newClientProcedure(ClientData &clientData)
 {
+    std::lock_guard<std::mutex> syncLock(syncMutex);
     TcpSocket &sock = clientData.sock;
     std::mutex &clientMutex = clientData.sockMutex;
 

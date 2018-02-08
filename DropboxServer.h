@@ -22,6 +22,7 @@ public:
     void run();
 
 private:
+    std::mutex syncMutex;
     struct ClientData;
     const int maxClientsNumber;
     std::vector<std::reference_wrapper<ClientData> > clients;
