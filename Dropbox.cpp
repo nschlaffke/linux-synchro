@@ -404,7 +404,7 @@ void Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mu
     // todo wysyłać datę utworzenia pliku
     clientMutex.lock();
     sendEvent(sock, NEW_FILE);
-    std::__cxx11::string relativePath = generateRelativePath(filePath);
+    std::string relativePath = generateRelativePath(filePath);
     sendString(sock, relativePath);
     IntType fileSize = getFileSize(filePath);
     sendInt(sock, fileSize);
@@ -424,7 +424,7 @@ void Dropbox::sendNewDirectoryProcedure(TcpSocket sock, std::string directoryPat
 {
     clientMutex.lock();
     sendEvent(sock, NEW_DIRECTORY);
-    std::__cxx11::string relativePath = generateRelativePath(directoryPath);
+    std::string relativePath = generateRelativePath(directoryPath);
     sendString(sock, relativePath);
     clientMutex.unlock();
 }
@@ -439,7 +439,7 @@ void Dropbox::sendDeletionPathProcedure(TcpSocket sock, std::string directoryPat
 {
     clientMutex.lock();
     sendEvent(sock, DELETE);
-    std::__cxx11::string relativePath = generateRelativePath(directoryPath);
+    std::string relativePath = generateRelativePath(directoryPath);
     sendString(sock, relativePath);
     clientMutex.unlock();
 }
@@ -455,8 +455,10 @@ void Dropbox::sendMovePathsProcedure(TcpSocket sock, std::string sourcePath, std
 {
     clientMutex.lock();
     sendEvent(sock, MOVE);
-    std::__cxx11::string relativeSourcePath = generateRelativePath(sourcePath);
-    std::__cxx11::string relativeDestinationPath = generateRelativePath(destinationPath);
+    std::cout << "senFROM: " << sourcePath << " TO: " << destinationPath << std::endl;
+    std::string relativeSourcePath = generateRelativePath(sourcePath);
+    std::string relativeDestinationPath = generateRelativePath(destinationPath);
+    std::cout << "senFROM: " << relativeSourcePath << " TO: " << relativeDestinationPath << std::endl;
     sendString(sock, relativeSourcePath);
     sendString(sock, relativeDestinationPath);
     clientMutex.unlock();
@@ -467,8 +469,8 @@ void Dropbox::sendCopyPathsProcedure(TcpSocket sock, std::string sourcePath, std
 {
     clientMutex.lock();
     sendEvent(sock, COPY);
-    std::__cxx11::string relativeSourcePath = generateRelativePath(sourcePath);
-    std::__cxx11::string relativeDestinationPath = generateRelativePath(destinationPath);
+    std::string relativeSourcePath = generateRelativePath(sourcePath);
+    std::string relativeDestinationPath = generateRelativePath(destinationPath);
     sendString(sock, relativeSourcePath);
     sendString(sock, relativeDestinationPath);
     clientMutex.unlock();

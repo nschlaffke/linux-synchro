@@ -46,7 +46,7 @@ void Inotify::init()
         mError = errno;
         stringstream errorStream;
         errorStream << "Inotify initialization was unsuccessful" << strerror(mError) << ".";
-        throw runtime_error(errorStream.str());
+        throw std::runtime_error(errorStream.str());
     }
 }
 
@@ -75,7 +75,7 @@ void Inotify::watchDirectoryRecursively(boost::filesystem::path path)
     }
     else
     {
-        throw runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
+        throw std::runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
     }
 }
 
@@ -112,7 +112,7 @@ void Inotify::watchFile(boost::filesystem::path filePath)
             if(mError == 28)
             {
                 errorStream << "Unable to watch " << strerror(mError) << ". Please increase the number of watches in \"/proc/sys/fs/inotify/max_user_watches\".";
-                throw runtime_error(errorStream.str());
+                throw std::runtime_error(errorStream.str());
             }
             
             errorStream << "Unable to watch " << strerror(mError) << ". Path: " << filePath.string();
@@ -122,7 +122,7 @@ void Inotify::watchFile(boost::filesystem::path filePath)
     }
     else
     {
-        throw runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + filePath.string());
+        throw std::runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + filePath.string());
     }
 }
 
@@ -141,7 +141,7 @@ void Inotify::removeWatch(boost::filesystem::path filePath)
         mError = errno;
         stringstream errorStream;
         errorStream << "Failed to remove watch! " << strerror(mError) << ".";
-        throw runtime_error(errorStream.str());
+        throw std::runtime_error(errorStream.str());
       }
 
     mDirectories.erase(watchDescriptor);
@@ -161,7 +161,7 @@ int Inotify::pathToWatchDescriptor(boost::filesystem::path path)
             return entry.first;
         }
     }
-    throw runtime_error("Failed to find the path");
+    throw std::runtime_error("Failed to find the path");
 }
 
 void Inotify::setEventFlag(int eventFlag)

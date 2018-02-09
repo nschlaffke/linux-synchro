@@ -103,11 +103,28 @@ void ClientEventReporter::saveAsClosed(Notification notification)
 {
     std::cout << "Closed\n";
     FileInfo fileInfo = findByPath(notification.destination);
+    struct stat result;
     std::cout << fileInfo.path.string() << std::endl;
 
     if(fileInfo.path.string().empty())
     {
-        throw runtime_error("There is no info about the file");
+        if(boost::filesystem::exists(notification.destination))
+        {
+            fileInfo.path = notification.destination;
+            fileInfo.isOpen = false;
+            if(stat(fileInfo.path.string().c_str(), &result) == 0)
+            {
+                fileInfo.modificationTime = result.st_mtim;
+            }
+            else
+            {
+                throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
+            }
+        }
+        else
+        {
+            return;
+        }
     }
 
     ClientEventReporter::allFilesInfo.erase(fileInfo);
@@ -119,11 +136,32 @@ void ClientEventReporter::saveAsOpen(Notification notification)
 {
     std::cout << "Opened\n";
     FileInfo fileInfo = findByPath(notification.destination);
+    struct stat result;
     std::cout << fileInfo.path.string() << std::endl;
 
     if(fileInfo.path.string().empty())
     {
-        throw runtime_error("There is no info about the file");
+        std::cout << notification.destination << std::endl;
+
+        if(boost::filesystem::exists(notification.destination))
+        {
+            fileInfo.path = notification.destination;
+            fileInfo.isOpen = true;
+            if(stat(fileInfo.path.string().c_str(), &result) == 0)
+            {
+                fileInfo.modificationTime = result.st_mtim;
+            }
+            else
+            {
+                throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
+            }
+
+            ClientEventReporter::allFilesInfo.insert(fileInfo);
+        }
+        else
+        {
+            throw runtime_error("There is no info about the file");
+        }
     }
 
     ClientEventReporter::allFilesInfo.erase(fileInfo);

@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     short port;
     if(argc != 3)
     {
-        ip = "127.0.0.1";
+        ip = "0.0.0.0";
         port = 8811;
     }
     else

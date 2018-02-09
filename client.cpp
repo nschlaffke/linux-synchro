@@ -23,9 +23,9 @@ int main(int argc, const char *argv[])
     }
     else
     {
-        ip = "127.0.0.1";
+        ip = "192.168.0.18";
         port = 8811;
-        path = "/home/piotr/Desktop/Dropbox/test2";
+        path = "/home/piotr/Desktop/Dropbox/test";
     }
 
     DropboxClient dropboxClient(ip, port, path);

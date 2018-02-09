@@ -141,8 +141,8 @@ private:
 struct Dropbox::EventMessage
 {
     Dropbox::ProtocolEvent event;
-    std::__cxx11::string source;
-    std::__cxx11::string destination;
+    std::string source;
+    std::string destination;
     TcpSocket sender;
 };
 #endif //DROPBOX_DROPBOX_H

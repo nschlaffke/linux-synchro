@@ -88,7 +88,12 @@ boost::filesystem::path Notifier::correctPath(boost::filesystem::path path)
 {
     std::string path2 = path.string();
     char forbiddenSign = 1;
-    unsigned int pos = static_cast<int>(path2.find(forbiddenSign));
+    unsigned int pos;
+    do
+    {
+        pos = static_cast<int>(path2.find(forbiddenSign));
+        forbiddenSign++;
+    } while(std::string::npos == pos && forbiddenSign < 32);
 
     if (std::string::npos == pos)
     {
@@ -162,19 +167,19 @@ Event Notifier::determineMoveType(Notification &notification)
     return Event::outward_move;
 }
 
-Event Notifier::catchAllCreations() {
+Event Notifier::catchAllEvents(Event eventToOmit) {
     Event event;
 
     do {
         auto fileSystemEvent = mInotify->getNextEvent();
         event = static_cast<Event>(fileSystemEvent.getWEventFlag());
-        if(event != Event::modify)
+        if(event != eventToOmit)
         {
             return event;
         }
     } while (mInotify->getLastErrno() != EAGAIN);
 
-    return Event::modify;
+    return eventToOmit;
 }
 
 void Notifier::runOnce() {
@@ -184,21 +189,29 @@ void Notifier::runOnce() {
     notification.source = "";
     notification.destination = fileSystemEvent.getPath();
 
-    if(notification.destination.filename().string().rfind(".swp") == notification.destination.filename().string().size() - 4)
-    {
-        std::cout << notification.destination.string() << std::endl;
-        notification.destination = notification.destination.remove_filename().string() + '/' + notification.destination.filename().string().substr(1, notification.destination.filename().string().size() - 5);
-        std::cout << notification.destination.string() << std::endl;
-    }
-    else if (notification.destination.filename().string()[0] == '.')
+    if (notification.destination.filename().string()[0] == '.')
     {
         std::cout << "RETURN: " << notification.destination.string() << std::endl;
         return;
     }
 
+    if(event == Event::open)
+    {
+        std::cout << "NOTFIER OPEN:" << notification.destination << std::endl;
+        if(!boost::filesystem::exists(notification.destination))
+        {
+            notification.destination = correctPath(notification.destination);
+            if(!boost::filesystem::exists(notification.destination))
+            {
+                std::string pathS = notification.destination.string();
+                notification.destination = boost::filesystem::path(pathS.substr(0, static_cast<unsigned long>(pathS.rfind('/')) - 1));
+            }
+        }
+    }
+
     if(event == Event::modify)
     {
-        event = catchAllCreations();
+        event = catchAllEvents(Event::modify);
     }
 
     else if (event == Event::moved_from || event == Event::moved_from_dir)
