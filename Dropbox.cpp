@@ -240,14 +240,14 @@ void Dropbox::sendFile(const std::string fileName)
     sendFile(*this, fileName);
 }
  */
-void Dropbox::sendFile(TcpSocket &sock, const std::string fileName)
+void Dropbox::sendFile(TcpSocket &sock, const std::string fileName, std::size_t fileSize)
 {
     std::ifstream file(fileName, std::ios::binary | std::ios::in);
     if (!file.good())
     {
         throw DropboxException("Couldn't open file");
     }
-    size_t fileSize = getFileSize(fileName);
+    //size_t fileSize = getFileSize(fileName);
     char buffer[TcpSocket::CHUNK_SIZE];
     int rest = fileSize % TcpSocket::CHUNK_SIZE;
     int sent = 0;
@@ -401,14 +401,13 @@ int Dropbox::getTotalReceived() const
  */
 void Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex)
 {
-    // todo wysyłać datę utworzenia pliku
     clientMutex.lock();
     sendEvent(sock, NEW_FILE);
     std::string relativePath = generateRelativePath(filePath);
     sendString(sock, relativePath);
     IntType fileSize = getFileSize(filePath);
     sendInt(sock, fileSize);
-    sendFile(sock, filePath);
+    sendFile(sock, filePath, fileSize);
     Dropbox::IntType modificationTime = static_cast<IntType>(getModificationTime(filePath));
     sendInt(sock, modificationTime);
     clientMutex.unlock();

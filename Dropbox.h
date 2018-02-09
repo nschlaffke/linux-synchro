@@ -84,7 +84,7 @@ protected:
 
     std::string generateAbsolutPath(std::string pathToFile);
 
-    void sendFile(TcpSocket &sock, std::string fileName);
+    void sendFile(TcpSocket &sock, const std::string fileName, std::size_t fileSize);
     //void sendFile(const std::string fileName);
 
     void receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize);

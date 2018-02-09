@@ -105,12 +105,9 @@ client.cpp
 server.cpp
 test/main.cpp
 test/server_folder/antylopa.cpp
-"test/server_folder/dupnik jest szalupny"
 test/server_folder/plik.txt
 test/test.cpp
-test/
 cleanup.sh
-test/
 __test__/
 __testServer__/
 client2.cpp
