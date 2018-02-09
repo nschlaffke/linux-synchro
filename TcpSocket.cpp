@@ -75,7 +75,7 @@ size_t TcpSocket::receiveData(char *buffer, size_t bufferSize)
             throw SocketException(POSIXError::getErrorMessage("Failed to read: "));
         }
     }
-    return static_cast<size_t>(bufferSize);
+    return static_cast<size_t>(all);
 }
 
 size_t TcpSocket::sendData(const char data[], size_t size)
