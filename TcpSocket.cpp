@@ -65,13 +65,16 @@ size_t TcpSocket::receiveData(char *buffer, size_t bufferSize)
     {
         throw (POSIXError::getErrorMessage("Socket is not connected"));
     }
-    ssize_t result = read(sock.getVal(), buffer, bufferSize);
-
-    if (result == -1)
+    while(bufferSize > 0)
     {
-        throw SocketException(POSIXError::getErrorMessage("Failed to read: "));
-    } else
-        return static_cast<size_t>(result);
+        ssize_t result = read(sock.getVal(), buffer, bufferSize);
+        bufferSize -= result;
+        if (result == -1)
+        {
+            throw SocketException(POSIXError::getErrorMessage("Failed to read: "));
+        }
+    }
+    return static_cast<size_t>(bufferSize);
 }
 
 size_t TcpSocket::sendData(const char data[], size_t size)
@@ -80,7 +83,8 @@ size_t TcpSocket::sendData(const char data[], size_t size)
     if (result == -1)
     {
         throw SocketException(POSIXError::getErrorMessage("Failed to write: "));
-    } else
+    }
+    else
         return static_cast<size_t>(result);
 }
 
