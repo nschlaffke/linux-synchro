@@ -65,6 +65,7 @@ size_t TcpSocket::receiveData(char *buffer, size_t bufferSize)
     {
         throw (POSIXError::getErrorMessage("Socket is not connected"));
     }
+    int all = bufferSize;
     while(bufferSize > 0)
     {
         ssize_t result = read(sock.getVal(), buffer, bufferSize);
