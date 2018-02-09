@@ -23,9 +23,9 @@
 class Dropbox
 {
 protected:
-    typedef u_int64_t IntType;
 
 public:
+    typedef u_int64_t IntType;
     enum ProtocolEvent : IntType
     {
         NEW_CLIENT,

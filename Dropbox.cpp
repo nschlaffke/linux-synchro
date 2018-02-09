@@ -257,10 +257,11 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName, std::size_t 
         sent += sock.sendData(buffer, TcpSocket::CHUNK_SIZE);
         //file.seekg(TcpSocket::CHUNK_SIZE, std::ios::cur);
     }
-    if (rest > 0)
+    while (rest > 0)
     {
         file.read(buffer, rest);
         sent += sock.sendData(buffer, rest);
+        rest -= sent;
     }
     totalSent += fileSize;
     file.close();
@@ -274,6 +275,7 @@ void Dropbox::receiveFile(const std::string fileName, size_t fileSize)
  */
 void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize) // fileName jest sciezka do pliku
 {
+    std::cout << "RECEIVED FILE SIZE: " << fileSize << std::endl;
     std::ofstream file;
     file.open(fileName, std::ios::binary | std::ios::out | std::ios::trunc);
     if (!file.good())
@@ -288,8 +290,12 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
         file.write(buffer, size);
         //file.seekp(size, std::ios::beg);
     }
-    size_t size = sock.receiveData(buffer, rest);
-    file.write(buffer, size);
+    while(rest > 0)
+    {
+        size_t size = sock.receiveData(buffer, rest);
+        file.write(buffer, size);
+        rest -= size;
+    }
     totalReceived += fileSize;
     file.close();
 
