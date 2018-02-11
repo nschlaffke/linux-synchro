@@ -75,7 +75,8 @@ void Inotify::watchDirectoryRecursively(boost::filesystem::path path)
     }
     else
     {
-        throw std::runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
+        // TODO usuniety wyjatek rozwiazanie mutex na system plikow
+        //throw std::runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
     }
 }
 
@@ -207,7 +208,11 @@ EventType Inotify::getNextEvent()
         while(i < length)
         {
             inotify_event *event = ((struct inotify_event*) &buffer[i]);
-            boost::filesystem::path path(watchDescriptorToPath(event->wd) / string(event->name));
+            boost::filesystem::path path;
+            if(event->len > 0)
+                path = boost::filesystem::path(watchDescriptorToPath(event->wd) / string(event->name));
+            else
+                path = boost::filesystem::path(watchDescriptorToPath(event->wd));
             if(boost::filesystem::is_directory(path))
             {
                 event->mask |= IN_ISDIR;
