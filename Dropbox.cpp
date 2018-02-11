@@ -204,7 +204,6 @@ void Dropbox::receiveString(std::string &text)
 void Dropbox::receiveString(TcpSocket &sock, std::string &text)
 {
     char buffer[maxStringSize];
-    int rec = sock.receiveData(buffer, maxStringSize);
     std::string tmp(buffer);
     text = tmp;
 }
