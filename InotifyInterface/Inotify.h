@@ -46,7 +46,6 @@ class Inotify{
     bool isIgnored(string fileName);
     bool onTimeout(time_t eventTime);
     std::string correctPath(std::string path);
-    void removeAllWatches();
     void init();
 
     public:

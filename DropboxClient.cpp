@@ -8,9 +8,7 @@
 
 DropboxClient::DropboxClient(const std::string &ip, unsigned short port, const std::string folderPath)
         : Dropbox(folderPath), TcpSocket(ip, port), serverSocket(*this), folderPath(folderPath)
-{
-    // koniecznie może być przywrócenie notifiera w to miejsce
-}
+{}
 
 void DropboxClient::run()
 {
@@ -32,8 +30,6 @@ void DropboxClient::run()
 
     s.join();
     return;
-    r.join();
-    t.join();
 }
 
 /**

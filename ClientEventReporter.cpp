@@ -14,25 +14,8 @@ ClientEventReporter::ClientEventReporter(boost::filesystem::path observedDirecto
     collectFilePaths(this->observedDirectory);
 }
 
-char* ClientEventReporter::convertToCharArray(string path)
-{
-    char *convertedPath = new char[path.size() + 1];
-    std::copy(path.begin(), path.end(), convertedPath);
-    convertedPath[path.size()] = '\0';
-
-    return convertedPath;
-}
-
-int ClientEventReporter::getFileSize(const char* filename)
-{
-    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-    return static_cast<int>(in.tellg());
-}
-
 void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
 {
-    struct stat result;
-
     if(boost::filesystem::exists(path))
     {
         if(boost::filesystem::is_directory(path))
@@ -43,15 +26,6 @@ void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
             FileInfo fileInfo;
             fileInfo.path = path;
             fileInfo.isOpen = false;
-
-            if(stat(fileInfo.path.string().c_str(), &result) == 0)
-            {
-                fileInfo.modificationTime = result.st_mtim;
-            }
-            else
-            {
-                throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-            }
             ClientEventReporter::allFilesInfo.insert(fileInfo);
 
             while(it != end)
@@ -62,18 +36,8 @@ void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
                     FileInfo fileInfo;
                     fileInfo.path = currentPath;
                     fileInfo.isOpen = false;
-                    if(stat(fileInfo.path.string().c_str(), &result) == 0)
-                    {
-                        fileInfo.modificationTime = result.st_mtim;
-                    }
-                    else
-                    {
-                        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-                    }
-
                     ClientEventReporter::allFilesInfo.insert(fileInfo);
                 }
-
                 ++it;
             }
         }
@@ -84,42 +48,16 @@ void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
     }
 }
 
-/*ClientEventReporter::FileInfo ClientEventReporter::findByPath(boost::filesystem::path path)
-{
-    for(FileInfo fileInfo: ClientEventReporter::allFilesInfo){
-        if (fileInfo.path == path)
-        {
-            return fileInfo;
-        }
-    }
-
-    FileInfo empty;
-    empty.path = boost::filesystem::path("");
-
-    return empty;
-}*/
-
 void ClientEventReporter::saveAsClosed(Notification notification)
 {
     //std::cout << "Closed\n";
     FileInfo fileInfo = findByPath(notification.destination);
-    struct stat result;
-    //std::cout << fileInfo.path.string() << std::endl;
 
     if(fileInfo.path.string().empty())
     {
-        if(boost::filesystem::exists(notification.destination))
-        {
+        if(boost::filesystem::exists(notification.destination)) {
             fileInfo.path = notification.destination;
             fileInfo.isOpen = false;
-            if(stat(fileInfo.path.string().c_str(), &result) == 0)
-            {
-                fileInfo.modificationTime = result.st_mtim;
-            }
-            else
-            {
-                throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-            }
         }
         else
         {
@@ -137,7 +75,6 @@ void ClientEventReporter::saveAsOpen(Notification notification)
     //std::cout << "Opened\n";
     notification.destination = Dropbox::correctPath(notification.destination);
     FileInfo fileInfo = findByPath(notification.destination);
-    struct stat result;
 
     if(fileInfo.path.string().empty())
     {
@@ -146,14 +83,6 @@ void ClientEventReporter::saveAsOpen(Notification notification)
         {
             fileInfo.path = notification.destination;
             fileInfo.isOpen = true;
-            if(stat(fileInfo.path.string().c_str(), &result) == 0)
-            {
-                fileInfo.modificationTime = result.st_mtim;
-            }
-            else
-            {
-                throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-            }
 
             ClientEventReporter::allFilesInfo.insert(fileInfo);
         }
@@ -220,12 +149,14 @@ bool ClientEventReporter::checkIfCopied(Notification &notification)
 {
     FileInfo fileInfo;
     struct stat result;
+    timespec modificationTime1, modificationTime2;
 
     fileInfo.path = notification.destination;
     fileInfo.isOpen = false;
+
     if(stat(fileInfo.path.string().c_str(), &result) == 0)
     {
-        fileInfo.modificationTime = result.st_mtim;
+        modificationTime1 = result.st_mtim;
     }
     else
     {
@@ -237,8 +168,16 @@ bool ClientEventReporter::checkIfCopied(Notification &notification)
 
         for(FileInfo fi: ClientEventReporter::allFilesInfo)
         {
-            if(fi.modificationTime.tv_sec == fileInfo.modificationTime.tv_sec &&
-               fi.modificationTime.tv_nsec == fileInfo.modificationTime.tv_nsec &&
+            if(stat(fi.path.string().c_str(), &result) == 0)
+            {
+                modificationTime2 = result.st_mtim;
+            }
+            else
+            {
+                throw runtime_error("Determining modification time has failed. Path : " + fi.path.string() + "\n");
+            }
+
+            if(modificationTime2.tv_sec == modificationTime1.tv_sec &&
                fi.path.filename() == fileInfo.path.filename())
             {
                 if(checkIfSameFiles(fileInfo.path, fi.path))
@@ -248,7 +187,6 @@ bool ClientEventReporter::checkIfCopied(Notification &notification)
                 }
             }
         }
-
         return false;
     }
     else
@@ -261,18 +199,9 @@ void ClientEventReporter::requestCreation(Notification notification) //creation,
 {
     //std::cout << "Creation\n";
     FileInfo fileInfo;
-    struct stat result;
 
     fileInfo.path = notification.destination;
     fileInfo.isOpen = false;
-    if(stat(fileInfo.path.string().c_str(), &result) == 0)
-    {
-        fileInfo.modificationTime = result.st_mtim;
-    }
-    else
-    {
-        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-    }
 
     // there is no need for creating empty directories, because their size is extremely small
     if(boost::filesystem::is_regular_file(notification.destination) && checkIfCopied(notification))
@@ -313,18 +242,9 @@ void ClientEventReporter::requestDeletion(Notification notification) //creation,
 bool ClientEventReporter::isInternalMove(Notification &notification)
 {
     FileInfo fileInfo;
-    struct stat result;
 
     fileInfo.path = notification.destination;
     fileInfo.isOpen = false;
-    if(stat(fileInfo.path.string().c_str(), &result) == 0)
-    {
-        fileInfo.modificationTime = result.st_mtim;
-    }
-    else
-    {
-        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-    }
 
     auto it = ClientEventReporter::allFilesInfo.find(fileInfo);
     if(it == ClientEventReporter::allFilesInfo.end())

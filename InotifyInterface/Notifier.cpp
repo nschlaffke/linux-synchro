@@ -153,14 +153,14 @@ Event Notifier::determineMoveType(Notification &notification)
     {
         if(notif.event == Event::moved_to || notif.event == Event::moved_to_dir)
         {
-            cout << "Internal moveE\n\n";
+            // cout << "Internal moveE\n\n";
             notification.source = notification.destination;
             notification.destination = notif.destination;
             return Event::internal_move;
         }
     }
 
-    cout << "Outward moveE\n\n";
+    // cout << "Outward moveE\n\n";
     return Event::outward_move;
 }
 

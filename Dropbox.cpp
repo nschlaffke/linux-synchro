@@ -119,6 +119,7 @@ boost::filesystem::path Dropbox::correctPath(boost::filesystem::path path)
     do
     {
         pos = static_cast<int>(path2.find(forbiddenSign));
+        pos = static_cast<int>(path2.find(forbiddenSign));
         forbiddenSign++;
     } while(std::string::npos == pos && forbiddenSign < 32);
 
@@ -165,14 +166,6 @@ void Dropbox::deleteFiles(std::string filePath)
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = folderPath;
     fileInfo.isOpen = false;
-    struct stat result;
-    if (stat(fileInfo.path.string().c_str(), &result) == 0)
-    {
-        fileInfo.modificationTime = result.st_mtim;
-    } else
-    {
-        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-    }
 
     ClientEventReporter::allFilesInfo.insert(fileInfo);
 }
@@ -203,14 +196,6 @@ void Dropbox::moveFile(std::string source, std::string destination)
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = destinationPath;
     fileInfo.isOpen = false;
-    struct stat result;
-    if (stat(fileInfo.path.string().c_str(), &result) == 0)
-    {
-        fileInfo.modificationTime = result.st_mtim;
-    } else
-    {
-        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-    }
 
     ClientEventReporter::allFilesInfo.insert(fileInfo);
 }
@@ -307,14 +292,6 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = boost::filesystem::path(fileName);
     fileInfo.isOpen = false;
-    struct stat result;
-    if (stat(fileInfo.path.string().c_str(), &result) == 0)
-    {
-        fileInfo.modificationTime = result.st_mtim;
-    } else
-    {
-        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-    }
 
     ClientEventReporter::allFilesInfo.insert(fileInfo);
 }
@@ -362,14 +339,6 @@ void Dropbox::copyFile(std::string source, std::string destination)
     ClientEventReporter::FileInfo fileInfo;
     fileInfo.path = boost::filesystem::path(destination);
     fileInfo.isOpen = false;
-    struct stat result;
-    if (stat(fileInfo.path.string().c_str(), &result) == 0)
-    {
-        fileInfo.modificationTime = result.st_mtim;
-    } else
-    {
-        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
-    }
 
     ClientEventReporter::allFilesInfo.insert(fileInfo);
 }
@@ -414,9 +383,9 @@ void Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mu
 {
     clientMutex.lock();
     sendEvent(sock, NEW_FILE);
-    std::cout << "SEND NEW FILE PROCEDURE, ABSOLUTE PATH: " << filePath << std::endl;
+    // std::cout << "SEND NEW FILE PROCEDURE, ABSOLUTE PATH: " << filePath << std::endl;
     std::string relativePath = generateRelativePath(filePath);
-    std::cout << "SEND NEW FILE PROCEDURE, RELATIVE PATH: " << relativePath << std::endl;
+    // std::cout << "SEND NEW FILE PROCEDURE, RELATIVE PATH: " << relativePath << std::endl;
     sendString(sock, relativePath);
     IntType fileSize = getFileSize(filePath);
     sendInt(sock, fileSize);
@@ -516,7 +485,7 @@ std::string *Dropbox::receiveMovePathsProcedure(TcpSocket &serverSocket, std::mu
     receiveString(serverSocket, paths[1]);
     paths[0] = generateAbsolutPath(paths[0]);
     paths[1] = generateAbsolutPath(paths[1]);
-    cout << "FROM: " << paths[0] << " TO: " << paths[1] << std::endl;
+    // cout << "FROM: " << paths[0] << " TO: " << paths[1] << std::endl;
     ClientEventReporter::ignoredPaths.insert(paths[0]);
     ClientEventReporter::ignoredPaths.insert(paths[1]);
     moveFile(paths[0], paths[1]);
@@ -552,10 +521,10 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
     std::string fileName;
     IntType size;
     receiveString(serverSocket, fileName);
-    std::cout << "RECEIVE NEW FILE PROCEDURE, RELATIVE PATH: " << fileName << std::endl;
+    // std::cout << "RECEIVE NEW FILE PROCEDURE, RELATIVE PATH: " << fileName << std::endl;
     fileName = generateAbsolutPath(fileName);
 
-    std::cout << "RECEIVE NEW FILE PROCEDURE, ABSOLUTE PATH: " << fileName << std::endl;
+    // std::cout << "RECEIVE NEW FILE PROCEDURE, ABSOLUTE PATH: " << fileName << std::endl;
 
     ClientEventReporter::FileInfo fileInfo = ClientEventReporter::findByPath(boost::filesystem::path(fileName));
     if(!fileInfo.path.string().empty() && fileInfo.isOpen)

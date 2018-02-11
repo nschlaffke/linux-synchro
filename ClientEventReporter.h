@@ -29,14 +29,8 @@ public:
     {
         boost::filesystem::path path;
         bool isOpen;
-        struct timespec modificationTime;
         friend bool operator==(const FileInfo& first, const FileInfo& second){
-            return first.path == second.path &&
-                   first.modificationTime.tv_sec == second.modificationTime.tv_sec;
-        }
-
-        friend bool operator<(const FileInfo& first, const FileInfo& second){
-            return first.modificationTime.tv_sec < second.modificationTime.tv_sec;
+            return first.path == second.path;
         }
     };
 
@@ -76,9 +70,7 @@ private:
 
     boost::filesystem::path observedDirectory;
 
-    static char* convertToCharArray(string path);
     static bool isInternalMove(Notification &notification);
-    static int getFileSize(const char* filename);
     static bool isIgnored(boost::filesystem::path path);
     void collectFilePaths(boost::filesystem::path dir);
 };
