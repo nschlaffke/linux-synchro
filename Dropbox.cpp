@@ -186,7 +186,6 @@ void Dropbox::sendString(std::string text)
  */
 void Dropbox::sendString(TcpSocket &sock, std::string text)
 {
-    std::cout << "Sending string:\n" << text << std::endl;
     int textLen = text.length();
     if (textLen >= maxStringSize)
     {
@@ -208,8 +207,6 @@ void Dropbox::receiveString(TcpSocket &sock, std::string &text)
     int rec = sock.receiveData(buffer, maxStringSize);
     std::string tmp(buffer);
     text = tmp;
-    std::cout << "Received string " << rec
-              << ":\n" << text << std::endl;
 }
 
 /*
@@ -508,7 +505,7 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
     ClientEventReporter::FileInfo fileInfo = ClientEventReporter::findByPath(boost::filesystem::path(fileName));
     if(!fileInfo.path.string().empty() && fileInfo.isOpen)
     {
-        std::cout << "A conflict has occured. Path: " << fileName << std::endl;
+        std::cerr << "A conflict has occured. Path: " << fileName << std::endl;
         ClientEventReporter::ignoredPaths.insert(fileName); // the first modifiction will be ignored
         fileName = fileInfo.path.remove_filename().string() + "/." + fileInfo.path.filename().string() + "_conflict_copy";
         ClientEventReporter::permanentlyIgnored.insert(fileName);
