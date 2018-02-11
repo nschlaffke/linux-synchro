@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
-
 if test "$#" -ne 1; then
     echo "podaj folder klienta 1"
     exit
 fi
-
-files=("plik1.txt", "plik2.txt", "plik3.txt")
+cd $1
+pwd
+files=("plik1.txt" "plik2.txt" "plik3.txt")
 while true
 do
-    for file in ${array[*]}
+    for file in ${files[*]}
     do
-        ls -al >> file 
+        ls -al > $file
     done
-    for file in ${array[*]}
+    sleep 1
+    for file in ${files[*]}
     do
-        rm file
+
+        rm $file
     done
+    sleep 1
 done
