@@ -25,6 +25,7 @@ class Dropbox
 protected:
 
 public:
+
     typedef u_int64_t IntType;
     enum ProtocolEvent : IntType
     {
@@ -54,37 +55,25 @@ public:
 protected:
     void createDirectory(std::string directoryPath);
 
-    void deleteFiles(std::string filePath);
-
     void moveFile(std::string source, std::string destination);
 
-    //void sendEvent(ProtocolEvent event);
     void sendEvent(TcpSocket &sock, ProtocolEvent event);
 
-    //void receiveEvent(ProtocolEvent &event);
     void receiveEvent(TcpSocket &sock, ProtocolEvent &event);
 
-    //void sendInt(IntType data);
     void sendInt(TcpSocket &sock, IntType data);
 
     void receiveInt(TcpSocket &sock, IntType &data);
-    //void receiveInt(IntType &data);
-
-    boost::filesystem::path createPath(std::string path);
 
     void sendString(TcpSocket &sock, std::string text);
-    //void sendString(std::string text);
 
-    //void receiveString(std::string &text);
     void receiveString(TcpSocket &sock, std::string &text);
 
     std::string generateAbsolutPath(std::string pathToFile);
 
-    void sendFile(TcpSocket &sock, const std::string fileName, std::size_t fileSize);
-    //void sendFile(const std::string fileName);
+    void sendFile(TcpSocket &sock, std::string fileName, std::size_t fileSize);
 
     void receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize);
-    //void receiveFile(const std::string fileName, size_t fileSize);
 
     void deleteFile(std::string fileName);
 
@@ -92,7 +81,7 @@ protected:
 
     const std::string folderPath;
 
-    size_t getFileSize(const std::string fileName);
+    size_t getFileSize(std::string fileName);
 
     void sendNewDirectoryProcedure(TcpSocket sock, std::string directoryPath, std::mutex &clientMutex);
 
@@ -120,7 +109,7 @@ public:
     static std::string correctPath(std::string path);
     static boost::filesystem::path correctPath(boost::filesystem::path path);
 
-    void sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex);
+    size_t sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex);
 
 protected:
     std::string generateRelativePath(std::string path);
@@ -141,6 +130,5 @@ struct Dropbox::EventMessage
     Dropbox::ProtocolEvent event;
     std::string source;
     std::string destination;
-    TcpSocket sender;
 };
 #endif //DROPBOX_DROPBOX_H

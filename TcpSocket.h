@@ -25,6 +25,9 @@
 class TcpSocket
 {
 public:
+    const std::string &getIpAddress() const;
+    unsigned short getPortNumber() const;
+
     class SocketException : public std::runtime_error
     {
     public:
@@ -36,24 +39,20 @@ public:
 
     TcpSocket();
 
+
+    void setIpAddress(const std::string &ipAddress);
+
+    void setPortNumber(unsigned short portNumber);
+
     TcpSocket(const std::string ip, const unsigned short port);
 
     void doConnect();
 
     bool isConnected();
 
-    void doClose();
-
     void closeSocket();
 
-    void setNoBlock();
-
-    void setBlock();
-
-    int hasData();
-
     TcpSocket(Descriptor tmp);
-
 
     size_t receiveData(char buffer[], const size_t bufferSize);
 

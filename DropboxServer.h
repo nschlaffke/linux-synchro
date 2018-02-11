@@ -18,7 +18,7 @@ class DropboxServer : public Dropbox, public TcpServer
 {
 
 public:
-    DropboxServer(const std::string &ip, const unsigned short port, const std::string path);
+    DropboxServer(const std::string &ip, unsigned short port, std::string path);
     void run();
 
 private:
@@ -26,7 +26,6 @@ private:
     struct ClientData;
     const int maxClientsNumber;
     std::vector<std::reference_wrapper<ClientData> > clients;
-    SafeQueue<EventMessage> broadcasterQueue;
     void newClientProcedure(ClientData &clientData);
     std::mutex clientsMutex;
     void broadcastFile(TcpSocket sender, std::string path, std::mutex &clientMutex);
@@ -37,7 +36,6 @@ private:
     std::vector<ClientData>::iterator clientVectorIterator;
     void clientReceiver(ClientData &clientData);
     void clientSender(ClientData &clientData);
-
     void terminateClientReceiver(ClientData &clientData);
 };
 

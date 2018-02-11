@@ -24,11 +24,6 @@ TcpSocket::TcpSocket(const std::string ip, const unsigned short port) :
     addr.sin_addr.s_addr = inet_addr(ipAddress.c_str());
 }
 
-void TcpSocket::doClose()
-{
-    sock.doClose();
-}
-
 TcpSocket::TcpSocket()
 {}
 void TcpSocket::doConnect()
@@ -104,49 +99,6 @@ TcpSocket::~TcpSocket()
 TcpSocket::TcpSocket(Descriptor tmp) : sock(tmp), connectionEstablished(true)
 {}
 
-void TcpSocket::setBlock()
-{
-    int flags = fcntl(sock.getVal(), F_GETFL);
-    if(flags < 0)
-    {
-        throw SocketException(POSIXError::getErrorMessage("Failed to read flags"));
-    }
-    flags = flags & (~O_NONBLOCK);
-    int tmp;
-    tmp = fcntl(sock.getVal(), F_SETFL, flags);
-    if(tmp < 0)
-    {
-        throw SocketException(POSIXError::getErrorMessage("Failed to set flags"));
-    }
-}
-
-void TcpSocket::setNoBlock()
-{
-    int tmp;
-    tmp = fcntl(sock.getVal(),
-          F_SETFL,
-          O_NONBLOCK);
-    if(tmp < 0)
-    {
-        throw SocketException(POSIXError::getErrorMessage("Failed to set non blocking mode"));
-    }
-
-}
-
-int TcpSocket::hasData()
-{
-    int count;
-    ioctl(sock.getVal(), FIONREAD, &count);
-    if(count > 0 )
-    {
-        return count;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
 bool TcpSocket::operator==(const TcpSocket &rhs) const
 {
     return sock == rhs.sock;
@@ -155,4 +107,24 @@ bool TcpSocket::operator==(const TcpSocket &rhs) const
 bool TcpSocket::operator!=(const TcpSocket &rhs) const
 {
     return !(rhs == *this);
+}
+
+void TcpSocket::setIpAddress(const std::string &ipAddress)
+{
+    TcpSocket::ipAddress = ipAddress;
+}
+
+void TcpSocket::setPortNumber(unsigned short portNumber)
+{
+    TcpSocket::portNumber = portNumber;
+}
+
+const std::string &TcpSocket::getIpAddress() const
+{
+    return ipAddress;
+}
+
+unsigned short TcpSocket::getPortNumber() const
+{
+    return portNumber;
 }

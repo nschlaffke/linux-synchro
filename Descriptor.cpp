@@ -20,13 +20,13 @@ int Descriptor::getVal()
 
 void Descriptor::doClose()
 {
-   close(fd);
-   isOpen = false;
+    close(fd);
+    isOpen = false;
 }
 
 bool Descriptor::isValid()
 {
-   return (fd != -1);
+    return (fd != -1);
 }
 
 Descriptor::Descriptor(const Descriptor &d)

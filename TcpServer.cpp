@@ -25,21 +25,22 @@ TcpServer::TcpServer(const std::string ip, const unsigned short port)
 
 TcpSocket TcpServer::doAccept()
 {
-    // TODO do accepta podawac addr tworzonego socketa. bedzie mozna uzyskac IP i port
     if (!bound)
     {
         throw SocketException(POSIXError::getErrorMessage("Accept before binding"));
     }
 
     socklen_t size = sizeof(addr);
-    int fd = accept(sock.getVal(), reinterpret_cast<sockaddr *>(&addr), &size);
+    sockaddr_in tmpAddr;
+    int fd = accept(sock.getVal(), reinterpret_cast<sockaddr *>(&tmpAddr), &size);
 
     if (fd == -1)
     {
         throw SocketException(POSIXError::getErrorMessage("Failed to accept"));
     }
     TcpSocket tmp(fd);
-    // tmp.setNoBlock();
+    tmp.setIpAddress(inet_ntoa(tmpAddr.sin_addr));
+    tmp.setPortNumber(tmpAddr.sin_port);
     return tmp;
 }
 

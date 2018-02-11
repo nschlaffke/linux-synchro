@@ -153,28 +153,6 @@ Dropbox::Dropbox(const std::string &folderPath) :
         folderPath(folderPath), totalSent(0), totalReceived(0), maxStringSize(500)
 {}
 
-void Dropbox::deleteFiles(std::string filePath)
-{
-    boost::filesystem::path dir = createPath(filePath);
-    if (!boost::filesystem::remove_all(dir))
-    {
-        std::string error("Failed to delete: ");
-        error += filePath;
-        throw DropboxException(error);
-    }
-
-    ClientEventReporter::FileInfo fileInfo;
-    fileInfo.path = folderPath;
-    fileInfo.isOpen = false;
-
-    ClientEventReporter::allFilesInfo.insert(fileInfo);
-}
-
-boost::filesystem::path Dropbox::createPath(std::string path)
-{
-    return boost::filesystem::path(folderPath + path);
-}
-
 void Dropbox::moveFile(std::string source, std::string destination)
 {
     boost::filesystem::path sourcePath = boost::filesystem::path(source);
@@ -379,7 +357,7 @@ int Dropbox::getTotalReceived() const
  * @param sock
  * @param filePath - ścieżka BEZWZGLĘDNA do pliku
  */
-void Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex)
+size_t Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex)
 {
     clientMutex.lock();
     sendEvent(sock, NEW_FILE);
@@ -393,6 +371,7 @@ void Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mu
     Dropbox::IntType modificationTime = static_cast<IntType>(getModificationTime(filePath));
     sendInt(sock, modificationTime);
     clientMutex.unlock();
+    return fileSize;
 }
 
 /**
