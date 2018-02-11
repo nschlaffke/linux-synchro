@@ -32,6 +32,10 @@ public:
         friend bool operator==(const FileInfo& first, const FileInfo& second){
             return first.path == second.path;
         }
+
+        friend bool operator<(const FileInfo& first, const FileInfo& second){
+            return first.path < second.path;
+        }
     };
 
     static SafeSet<FileInfo> allFilesInfo;
