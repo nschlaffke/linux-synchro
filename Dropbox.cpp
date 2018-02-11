@@ -211,6 +211,7 @@ void Dropbox::sendString(std::string text)
  */
 void Dropbox::sendString(TcpSocket &sock, std::string text)
 {
+    std::cout << "Sending string:\n" << text << std::endl;
     int textLen = text.length();
     if (textLen >= maxStringSize)
     {
@@ -229,9 +230,11 @@ void Dropbox::receiveString(std::string &text)
 void Dropbox::receiveString(TcpSocket &sock, std::string &text)
 {
     char buffer[maxStringSize];
-    totalReceived += sock.receiveData(buffer, maxStringSize);
+    int rec = sock.receiveData(buffer, maxStringSize);
     std::string tmp(buffer);
     text = tmp;
+    std::cout << "Received string " << rec
+              << ":\n" << text << std::endl;
 }
 
 /*
