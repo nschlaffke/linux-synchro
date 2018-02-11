@@ -100,7 +100,7 @@ void ClientEventReporter::saveAsOpen(Notification notification)
 void ClientEventReporter::makeRequest(Notification notification, Dropbox::ProtocolEvent protocolEvent) //deletion = moved_from, self-deletion
 {
     string path = notification.destination.string();
-    Event event = notification.event;
+    //Event event = notification.event;
 
     Dropbox::EventMessage eventMessage;
     eventMessage.event = protocolEvent;
