@@ -110,7 +110,6 @@ void DropboxClient::sender()
         ProtocolEvent event = eventMessage.event;
         std::string path = Dropbox::correctPath(eventMessage.destination);
 
-        std::cout << "Sender:\n";
         switch (event)
         {
             case NEW_FILE:
@@ -203,10 +202,7 @@ void DropboxClient::receiver()
     std::string *files = new std::string[2];
     while (true)
     {
-        std::cout << "Received: " << getTotalReceived() << std::endl;
-        std::cout << "Sent: " << getTotalSent() << std::endl;
         receiveEvent(serverSocket, event);
-        std::cout << "Receiver:\n";
         switch (event)
         {
             case NEW_FILE:

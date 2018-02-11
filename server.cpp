@@ -14,9 +14,8 @@ int main(int argc, char *argv[])
     string path;
     if (argc != 3)
     {
-        ip = "0.0.0.0";
-        port = 8811;
-        path = "/home/ns/semestr5/SK2/Dropbox/test/server_folder";
+        std::cout << "server.o [ip] [port] [path]" << endl;
+        return 0;
     }
     else
     {

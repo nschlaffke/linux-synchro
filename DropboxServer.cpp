@@ -167,6 +167,8 @@ void DropboxServer::clientReceiver(ClientData &clientData)
         {
             case NEW_CLIENT:
                 cout << "recNEW CLIENT CONNECTED\n";
+                cout << "ip: " << client.getIpAddress();
+                cout << " port: " << client.getPortNumber() << endl;
                 try
                 {
                     newClientProcedure(clientData);
@@ -180,8 +182,11 @@ void DropboxServer::clientReceiver(ClientData &clientData)
             case NEW_FILE:
                 try
                 {
+                    cout << "start recNEW FILE: " << file << endl;
+                    cout << "ip: " << client.getIpAddress();
+                    cout << " port: " << client.getPortNumber() << endl;
                     file = receiveNewFileProcedure(client, clientData.sockMutex);
-                    cout << "recNEW FILE: " << file << endl;
+                    std::cout << "end\n";
                     broadcastFile(client, file, clientData.sockMutex);
                 }
                 catch (std::exception &a)
@@ -195,6 +200,8 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 {
                     folder = receiveNewDircetoryProcedure(client, clientData.sockMutex);
                     cout << "recNEW_DIRECTORY: " << folder << endl;
+                    cout << "ip: " << client.getIpAddress();
+                    cout << " port: " << client.getPortNumber() << endl;
                     broadcastDirectory(client, folder, clientData.sockMutex);
                 }
                 catch (std::exception &a)
@@ -221,6 +228,8 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 {
                     files = receiveMovePathsProcedure(client, clientData.sockMutex);
                     std::cout << "recMOVE FROM: " << files[0] << " TO: " << files[1] << std::endl;
+                    cout << "ip: " << client.getIpAddress();
+                    cout << " port: " << client.getPortNumber() << endl;
                     broadcastMove(client, files[0], files[1], clientData.sockMutex);
                 }
                 catch (std::exception &a)
@@ -235,6 +244,8 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 {
                     files = receiveCopyPathsProcedure(client, clientData.sockMutex);
                     std::cout << "recCOPY FROM: " << files[0] << " TO: " << files[1] << std::endl;
+                    cout << "ip: " << client.getIpAddress();
+                    cout << " port: " << client.getPortNumber() << endl;
                     broadcastCopy(client, files[0], files[1], clientData.sockMutex);
                 }
                 catch (std::exception &a)

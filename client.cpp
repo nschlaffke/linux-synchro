@@ -23,9 +23,8 @@ int main(int argc, const char *argv[])
     }
     else
     {
-        ip = "192.168.0.18";
-        port = 8811;
-        path = "";
+        std::cout << "./client.o [ip] [port] [path]" << endl;
+        return 0;
     }
 
     DropboxClient dropboxClient(ip, port, path);
