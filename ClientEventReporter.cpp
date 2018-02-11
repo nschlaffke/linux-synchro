@@ -101,10 +101,10 @@ void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
 
 void ClientEventReporter::saveAsClosed(Notification notification)
 {
-    std::cout << "Closed\n";
+    //std::cout << "Closed\n";
     FileInfo fileInfo = findByPath(notification.destination);
     struct stat result;
-    std::cout << fileInfo.path.string() << std::endl;
+    //std::cout << fileInfo.path.string() << std::endl;
 
     if(fileInfo.path.string().empty())
     {
@@ -134,14 +134,14 @@ void ClientEventReporter::saveAsClosed(Notification notification)
 
 void ClientEventReporter::saveAsOpen(Notification notification)
 {
-    std::cout << "Opened\n";
+    //std::cout << "Opened\n";
     FileInfo fileInfo = findByPath(notification.destination);
     struct stat result;
-    std::cout << fileInfo.path.string() << std::endl;
+    //std::cout << fileInfo.path.string() << std::endl;
 
     if(fileInfo.path.string().empty())
     {
-        std::cout << notification.destination << std::endl;
+        //std::cout << notification.destination << std::endl;
 
         if(boost::filesystem::exists(notification.destination))
         {
@@ -182,7 +182,7 @@ void ClientEventReporter::makeRequest(Notification notification, Dropbox::Protoc
     }
     eventMessage.destination = notification.destination.string();
 
-    std::cout << "Event: " << Notifier::getEventName(event) << " on " << path << " was triggered." << std::endl;
+    //std::cout << "Event: " << Notifier::getEventName(event) << " on " << path << " was triggered." << std::endl;
 
     ClientEventReporter::messageQueue.enqueue(eventMessage);
 }
@@ -260,7 +260,7 @@ bool ClientEventReporter::checkIfCopied(Notification &notification)
 
 void ClientEventReporter::requestCreation(Notification notification) //creation, modification, moved_to (serwer wie ze trzeba utworzyć plik)
 {
-    std::cout << "Creation\n";
+    //std::cout << "Creation\n";
     FileInfo fileInfo;
     struct stat result;
 
@@ -278,18 +278,18 @@ void ClientEventReporter::requestCreation(Notification notification) //creation,
     // there is no need for creating empty directories, because their size is extremely small
     if(boost::filesystem::is_regular_file(notification.destination) && checkIfCopied(notification))
     {
-        std::cout << "Copied\n";
+        //std::cout << "Copied\n";
         makeRequest(notification, Dropbox::ProtocolEvent::COPY);
     }
 
     if(boost::filesystem::is_directory(notification.destination))
     {
-        std::cout << "Directory creation\n";
+        //std::cout << "Directory creation\n";
         makeRequest(notification, Dropbox::ProtocolEvent::NEW_DIRECTORY);
     }
     else
     {
-        std::cout << "File creation\n";
+        //std::cout << "File creation\n";
         makeRequest(notification, Dropbox::ProtocolEvent::NEW_FILE);
     }
 
@@ -298,7 +298,7 @@ void ClientEventReporter::requestCreation(Notification notification) //creation,
 
 void ClientEventReporter::requestDeletion(Notification notification) //creation, modification, moved_to (serwer wie ze trzeba utworzyć plik)
 {
-    std::cout << "Deletion\n";
+    //std::cout << "Deletion\n";
 
     /*if(notification.event == Event::remove_dir || notification.event == Event::remove_self_dir)
     {
@@ -350,12 +350,12 @@ void ClientEventReporter::requestMoveFrom(Notification notification)
 {
     if(notification.event == Event::outward_move)
     {
-        std::cout << "Outward move\n";
+        //std::cout << "Outward move\n";
         requestDeletion(notification);
     }
     else
     {
-        std::cout << "InternalMove\n";
+       // std::cout << "InternalMove\n";
         makeRequest(notification, Dropbox::ProtocolEvent::MOVE);
     }
 
@@ -365,12 +365,12 @@ void ClientEventReporter::requestMoveTo(Notification notification)
 {
     if(isInternalMove(notification))
     {
-        std::cout << "InternalMove\n";
+        //std::cout << "InternalMove\n";
         makeRequest(notification, Dropbox::ProtocolEvent::MOVE);
     }
     else
     {
-        std::cout << "Inward move\n";
+        //std::cout << "Inward move\n";
         ClientEventReporter::requestCreation(notification);
     }
 }

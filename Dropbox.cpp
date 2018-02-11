@@ -459,10 +459,8 @@ void Dropbox::sendMovePathsProcedure(TcpSocket sock, std::string sourcePath, std
 {
     clientMutex.lock();
     sendEvent(sock, MOVE);
-    std::cout << "senFROM: " << sourcePath << " TO: " << destinationPath << std::endl;
     std::string relativeSourcePath = generateRelativePath(sourcePath);
     std::string relativeDestinationPath = generateRelativePath(destinationPath);
-    std::cout << "senFROM: " << relativeSourcePath << " TO: " << relativeDestinationPath << std::endl;
     sendString(sock, relativeSourcePath);
     sendString(sock, relativeDestinationPath);
     clientMutex.unlock();
