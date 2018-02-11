@@ -69,6 +69,7 @@ size_t TcpSocket::receiveData(char *buffer, size_t bufferSize)
     while(bufferSize > 0)
     {
         ssize_t result = read(sock.getVal(), buffer, bufferSize);
+        buffer += result;
         bufferSize -= result;
         if (result == -1)
         {
@@ -81,14 +82,16 @@ size_t TcpSocket::receiveData(char *buffer, size_t bufferSize)
 size_t TcpSocket::sendData(const char data[], size_t size)
 {
     int counter = static_cast<int>(size);
+    const char *p= data;
     while(counter > 0)
     {
-        ssize_t result = write(sock.getVal(), data, size);
+        ssize_t result = write(sock.getVal(), p, size);
         if (result == -1)
         {
             throw SocketException(POSIXError::getErrorMessage("Failed to write: "));
         }
         counter -= size;
+        p += result;
     }
     return static_cast<size_t>(size);
 }
