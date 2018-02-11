@@ -217,7 +217,7 @@ void Dropbox::sendString(TcpSocket &sock, std::string text)
         throw DropboxException("Dropbox::sendString error: too long string");
     }
     const char *pointer = text.c_str();
-    totalSent += sock.sendData(pointer, maxStringSize);
+    sock.sendData(pointer, maxStringSize);
 }
 
 /*
@@ -255,13 +255,11 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName, std::size_t 
     {
         file.read(buffer, TcpSocket::CHUNK_SIZE);
         sent += sock.sendData(buffer, TcpSocket::CHUNK_SIZE);
-        //file.seekg(TcpSocket::CHUNK_SIZE, std::ios::cur);
     }
-    while (rest > 0)
+    if (rest > 0)
     {
         file.read(buffer, rest);
-        sent += sock.sendData(buffer, rest);
-        rest -= sent;
+        rest -= sock.sendData(buffer, rest);
     }
     totalSent += fileSize;
     file.close();
@@ -275,7 +273,6 @@ void Dropbox::receiveFile(const std::string fileName, size_t fileSize)
  */
 void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize) // fileName jest sciezka do pliku
 {
-    std::cout << "RECEIVED FILE SIZE: " << fileSize << std::endl;
     std::ofstream file;
     file.open(fileName, std::ios::binary | std::ios::out | std::ios::trunc);
     if (!file.good())
@@ -288,7 +285,6 @@ void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize
     {
         size_t size = sock.receiveData(buffer, TcpSocket::CHUNK_SIZE);
         file.write(buffer, size);
-        //file.seekp(size, std::ios::beg);
     }
     while(rest > 0)
     {

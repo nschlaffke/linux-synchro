@@ -80,20 +80,23 @@ size_t TcpSocket::receiveData(char *buffer, size_t bufferSize)
 
 size_t TcpSocket::sendData(const char data[], size_t size)
 {
-    ssize_t result = write(sock.getVal(), data, size);
-    if (result == -1)
+    int counter = static_cast<int>(size);
+    while(counter > 0)
     {
-        throw SocketException(POSIXError::getErrorMessage("Failed to write: "));
+        ssize_t result = write(sock.getVal(), data, size);
+        if (result == -1)
+        {
+            throw SocketException(POSIXError::getErrorMessage("Failed to write: "));
+        }
+        counter -= size;
     }
-    else
-        return static_cast<size_t>(result);
+    return static_cast<size_t>(size);
 }
 
 TcpSocket::~TcpSocket()
 {
     // closeSocket();
 }
-
 
 TcpSocket::TcpSocket(Descriptor tmp) : sock(tmp), connectionEstablished(true)
 {}
