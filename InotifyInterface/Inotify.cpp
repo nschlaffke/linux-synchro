@@ -207,7 +207,8 @@ EventType Inotify::getNextEvent()
         while(i < length)
         {
             inotify_event *event = ((struct inotify_event*) &buffer[i]);
-            boost::filesystem::path path(watchDescriptorToPath(event->wd) / string(event->name));
+            std::string eventName = correctPath(string(event->name));
+            boost::filesystem::path path(watchDescriptorToPath(event->wd) / eventName);
             if(boost::filesystem::is_directory(path))
             {
                 event->mask |= IN_ISDIR;
@@ -285,4 +286,25 @@ bool Inotify::isIgnored(string fileName)
 
 bool Inotify::onTimeout(time_t eventTime){
     return (mLastEventTime + mEventTimeout) > eventTime;
-  }
+}
+
+
+std::string Inotify::correctPath(std::string path)
+{
+    char forbiddenSign = 1;
+    unsigned int pos;
+
+    do
+    {
+        pos = static_cast<int>(path.find(forbiddenSign));
+        forbiddenSign++;
+    } while(std::string::npos == pos && forbiddenSign < 32);
+
+    if (std::string::npos == pos)
+    {
+        return path;
+    } else
+    {
+        return path.substr(0, static_cast<unsigned long>(pos - 1));
+    }
+}
