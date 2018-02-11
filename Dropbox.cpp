@@ -280,12 +280,6 @@ void Dropbox::sendFile(TcpSocket &sock, const std::string fileName, std::size_t 
     file.close();
 }
 
-/*
-void Dropbox::receiveFile(const std::string fileName, size_t fileSize)
-{
-    receiveFile(*this, fileName, fileSize);
-}
- */
 void Dropbox::receiveFile(TcpSocket &sock, std::string fileName, size_t fileSize) // fileName jest sciezka do pliku
 {
     std::ofstream file;
@@ -572,10 +566,12 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
         ClientEventReporter::permanentlyIgnored.insert(fileName);
     }
 
-    ClientEventReporter::ignoredPaths.insert(fileName);
-
     receiveInt(serverSocket, size);
+
+    ClientEventReporter::permanentlyIgnored.insert(fileName);
     receiveFile(serverSocket, fileName, size);
+    ClientEventReporter::permanentlyIgnored.erase(fileName);
+
     Dropbox::IntType modificationTime;
     receiveInt(serverSocket, modificationTime);
     changeModificationTime(fileName.c_str(), modificationTime);
