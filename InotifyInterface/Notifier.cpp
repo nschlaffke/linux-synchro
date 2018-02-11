@@ -11,9 +11,6 @@ const vector<Event> Notifier::events =
          Event::remove, Event::remove_self, Event::remove_dir, Event::remove_self_dir, Event::close, Event::modify, Event::move_self,
          Event::moved_from, Event::moved_to, Event::move, Event::open, Event::all};
 
-// const vector<Event> Notifier::events = {Event::modify};
-
-
 string Notifier::getEventName(Event event) {
     switch (event) {
         case Event::access:
@@ -191,13 +188,13 @@ void Notifier::runOnce() {
 
     if (notification.destination.filename().string()[0] == '.')
     {
-        std::cout << "RETURN: " << notification.destination.string() << std::endl;
+        //std::cout << "RETURN: " << notification.destination.string() << std::endl;
         return;
     }
 
     if(event == Event::open)
     {
-        std::cout << "NOTFIER OPEN:" << notification.destination << std::endl;
+        //std::cout << "NOTFIER OPEN:" << notification.destination << std::endl;
         if(!boost::filesystem::exists(notification.destination))
         {
             notification.destination = correctPath(notification.destination);

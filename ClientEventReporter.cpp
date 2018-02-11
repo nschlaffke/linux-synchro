@@ -135,13 +135,12 @@ void ClientEventReporter::saveAsClosed(Notification notification)
 void ClientEventReporter::saveAsOpen(Notification notification)
 {
     //std::cout << "Opened\n";
+    notification.destination = Dropbox::correctPath(notification.destination);
     FileInfo fileInfo = findByPath(notification.destination);
     struct stat result;
-    //std::cout << fileInfo.path.string() << std::endl;
 
     if(fileInfo.path.string().empty())
     {
-        //std::cout << notification.destination << std::endl;
 
         if(boost::filesystem::exists(notification.destination))
         {
@@ -250,9 +249,9 @@ bool ClientEventReporter::checkIfCopied(Notification &notification)
             }
         }
 
-        return false; //new file
+        return false;
     }
-    else // ordinary modyfication
+    else
     {
         return false;
     }
@@ -299,11 +298,6 @@ void ClientEventReporter::requestCreation(Notification notification) //creation,
 void ClientEventReporter::requestDeletion(Notification notification) //creation, modification, moved_to (serwer wie ze trzeba utworzyć plik)
 {
     //std::cout << "Deletion\n";
-
-    /*if(notification.event == Event::remove_dir || notification.event == Event::remove_self_dir)
-    {
-        notification.destination = notification.destination.remove_filename();
-    }*/
 
     for(auto it = ClientEventReporter::allFilesInfo.begin(); it != ClientEventReporter::allFilesInfo.end(); ++it)
     {
@@ -398,7 +392,6 @@ bool ClientEventReporter::isIgnored(boost::filesystem::path path)
         ignoredPaths.erase(it);
         return true;
     }
-
 }
 
 void ClientEventReporter::chooseRequest(Notification notification)
@@ -414,7 +407,15 @@ void ClientEventReporter::chooseRequest(Notification notification)
     switch(notification.event)
     {
         case Event::open:
-            saveAsOpen(notification);
+
+            try
+            {
+                saveAsOpen(notification);
+            }
+            catch(std::runtime_error &e)
+            {
+                std::cout << e.what() << std::endl;
+            }
             break;
 
         case Event::close:

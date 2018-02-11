@@ -49,7 +49,7 @@ void DropboxServer::clientSender(ClientData &clientData)
     {
         EventMessage message = queue.dequeue();
         ProtocolEvent event = message.event;
-        string file = correctPath(message.destination);
+        string file = Dropbox::correctPath(message.destination);
         cout << endl << file << endl << endl;
         switch (event)
         {
@@ -96,8 +96,8 @@ void DropboxServer::clientSender(ClientData &clientData)
             case MOVE:
                 try
                 {
-                    cout << "SENDING MOVE REQUEST FROM: " << correctPath(message.source) << " TO: " << file << endl;
-                    sendMovePathsProcedure(client, correctPath(message.source), file, clientMutex);
+                    cout << "SENDING MOVE REQUEST FROM: " << Dropbox::correctPath(message.source) << " TO: " << file << endl;
+                    sendMovePathsProcedure(client, Dropbox::correctPath(message.source), file, clientMutex);
                 }
                 catch (std::exception &a)
                 {
@@ -110,8 +110,8 @@ void DropboxServer::clientSender(ClientData &clientData)
             case COPY:
                 try
                 {
-                    cout << "SENDING COPY REQUEST FROM: " << correctPath(message.source) << " TO: " << file << endl;
-                    sendCopyPathsProcedure(client, correctPath(message.source), file, clientMutex);
+                    cout << "SENDING COPY REQUEST FROM: " << Dropbox::correctPath(message.source) << " TO: " << file << endl;
+                    sendCopyPathsProcedure(client, Dropbox::correctPath(message.source), file, clientMutex);
                 }
                 catch (std::exception &a)
                 {

@@ -93,7 +93,13 @@ void Dropbox::receiveInt(TcpSocket &sock, Dropbox::IntType &data)
 std::string Dropbox::correctPath(std::string path)
 {
     char forbiddenSign = 1;
-    unsigned int pos = static_cast<int>(path.find(forbiddenSign));
+    unsigned int pos;
+
+    do
+    {
+        pos = static_cast<int>(path.find(forbiddenSign));
+        forbiddenSign++;
+    } while(std::string::npos == pos && forbiddenSign < 32);
 
     if (std::string::npos == pos)
     {
@@ -108,7 +114,13 @@ boost::filesystem::path Dropbox::correctPath(boost::filesystem::path path)
 {
     std::string path2 = path.string();
     char forbiddenSign = 1;
-    unsigned int pos = static_cast<int>(path2.find(forbiddenSign));
+    unsigned int pos;
+
+    do
+    {
+        pos = static_cast<int>(path2.find(forbiddenSign));
+        forbiddenSign++;
+    } while(std::string::npos == pos && forbiddenSign < 32);
 
     if (std::string::npos == pos)
     {
@@ -408,7 +420,9 @@ void Dropbox::sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mu
 {
     clientMutex.lock();
     sendEvent(sock, NEW_FILE);
+    std::cout << "SEND NEW FILE PROCEDURE, ABSOLUTE PATH: " << filePath << std::endl;
     std::string relativePath = generateRelativePath(filePath);
+    std::cout << "SEND NEW FILE PROCEDURE, RELATIVE PATH: " << relativePath << std::endl;
     sendString(sock, relativePath);
     IntType fileSize = getFileSize(filePath);
     sendInt(sock, fileSize);
@@ -544,7 +558,10 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
     std::string fileName;
     IntType size;
     receiveString(serverSocket, fileName);
+    std::cout << "RECEIVE NEW FILE PROCEDURE, RELATIVE PATH: " << fileName << std::endl;
     fileName = generateAbsolutPath(fileName);
+
+    std::cout << "RECEIVE NEW FILE PROCEDURE, ABSOLUTE PATH: " << fileName << std::endl;
 
     ClientEventReporter::FileInfo fileInfo = ClientEventReporter::findByPath(boost::filesystem::path(fileName));
     if(!fileInfo.path.string().empty() && fileInfo.isOpen)
@@ -555,7 +572,6 @@ std::string Dropbox::receiveNewFileProcedure(TcpSocket &serverSocket, std::mutex
         ClientEventReporter::permanentlyIgnored.insert(fileName);
     }
 
-    std::cout << fileName << std::endl;
     ClientEventReporter::ignoredPaths.insert(fileName);
 
     receiveInt(serverSocket, size);

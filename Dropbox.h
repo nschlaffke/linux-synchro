@@ -52,10 +52,6 @@ public:
     virtual void run() = 0;
 
 protected:
-
-    std::string correctPath(std::string path);
-    boost::filesystem::path correctPath(boost::filesystem::path path);
-
     void createDirectory(std::string directoryPath);
 
     void deleteFiles(std::string filePath);
@@ -121,6 +117,8 @@ protected:
 
 public:
     int getTotalReceived() const;
+    static std::string correctPath(std::string path);
+    static boost::filesystem::path correctPath(boost::filesystem::path path);
 
     void sendNewFileProcedure(TcpSocket sock, std::string filePath, std::mutex &clientMutex);
 
