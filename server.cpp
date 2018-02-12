@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     string ip;
     short port;
     string path;
-    if (argc != 3)
+    if (argc != 4)
     {
         std::cout << "server.o [ip] [port] [path]" << endl;
         return 0;

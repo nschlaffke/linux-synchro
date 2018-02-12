@@ -215,6 +215,8 @@ void DropboxServer::clientReceiver(ClientData &clientData)
                 {
                     file = receiveDeletionPathProcedure(client, clientData.sockMutex);
                     cout << "recDELETE: " << file << endl;
+                    cout << "ip: " << client.getIpAddress();
+                    cout << " port: " << client.getPortNumber() << endl;
                     broadcastDeletion(client, file, clientData.sockMutex);
                 }
                 catch (std::exception &a)

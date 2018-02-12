@@ -21,8 +21,11 @@ void DropboxClient::run()
     notifier = Notifier()
             .watchPathRecursively(boost::filesystem::path(folderPath))
             .ignoreFileOnce("file")
-            .onEvents({Event::open, Event::close, Event::close_nowrite, Event::close_write, Event::remove, /*Event::remove_self,*/ Event::remove_dir, Event::remove_self_dir, Event::create, Event::create_dir, Event::modify,
-                       Event::outward_move, Event::internal_move, Event::moved_to, Event::moved_to_dir}, ClientEventReporter::chooseRequest);
+            .onEvents({Event::open, Event::close, Event::close_nowrite, Event::close_write,
+                       Event::remove, /*Event::remove_self,*/ Event::remove_dir, Event::remove_self_dir, Event::create,
+                       Event::create_dir, Event::modify,
+                       Event::outward_move, Event::internal_move, Event::moved_to, Event::moved_to_dir},
+                      ClientEventReporter::chooseRequest);
 
     std::thread t(&Notifier::run, notifier);
     std::thread s(&DropboxClient::sender, this);
@@ -39,30 +42,35 @@ void DropboxClient::run()
  */
 void DropboxClient::newClientProcedure()
 {
+    std::cout << "synchronization:\n";
     sendEvent(*this, NEW_CLIENT);
     Dropbox::ProtocolEvent event;
     do
     {
         receiveEvent(serverSocket, event);
-        switch(event)
+        switch (event)
         {
             case NEW_FILE:
-                receiveNewFileProcedure(serverSocket, serverMutex);
+                std::cout << "file: "
+                          << receiveNewFileProcedure(serverSocket, serverMutex)
+                          << std::endl;
                 break;
             case NEW_DIRECTORY:
-                receiveNewDircetoryProcedure(serverSocket, serverMutex);
+                std::cout << "directory: "
+                          << receiveNewDircetoryProcedure(serverSocket, serverMutex)
+                          << std::endl;
                 break;
             case IS_VALID:
                 answerIfValid(serverSocket);
                 break;
             case END_OF_SYNC:
+                std::cout << "end of sync\n";
                 break;
             default:
                 throw DropboxException("Protocol error");
                 break;
         }
-    }while(event != Dropbox::ProtocolEvent::END_OF_SYNC);
-    // teraz klient wysyła swoje pliki
+    } while (event != Dropbox::ProtocolEvent::END_OF_SYNC);
     if (boost::filesystem::exists(folderPath))
     {
         if (boost::filesystem::is_directory(folderPath))
@@ -77,15 +85,14 @@ void DropboxClient::newClientProcedure()
 
                 if (boost::filesystem::is_regular_file(currentPath))
                 {
-                    if(!askIfValid(serverSocket, it->path().c_str()))
+                    if (!askIfValid(serverSocket, it->path().c_str()))
                     {
                         // u klienta plik nie istnieje lub jest starszy, więc go wysyłamy
                         sendNewFileProcedure(sock, it->path().c_str(), serverMutex);
                     }
-                }
-                else if (boost::filesystem::is_directory(currentPath))
+                } else if (boost::filesystem::is_directory(currentPath))
                 {
-                    if(!askIfValid(serverSocket, it->path().c_str()))
+                    if (!askIfValid(serverSocket, it->path().c_str()))
                     {
                         sendNewDirectoryProcedure(sock, it->path().c_str(), serverMutex);
                     }

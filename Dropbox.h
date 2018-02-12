@@ -105,7 +105,6 @@ protected:
 
 
 public:
-    int getTotalReceived() const;
     static std::string correctPath(std::string path);
     static boost::filesystem::path correctPath(boost::filesystem::path path);
 
@@ -115,7 +114,7 @@ protected:
     std::string generateRelativePath(std::string path);
     void changeModificationTime(std::string path, Dropbox::IntType time);
     IntType getModificationTime(string path);
-    int getTotalSent();
+
     bool askIfValid(TcpSocket &socket, std::string path);
     bool answerIfValid(TcpSocket &socket);
 private:

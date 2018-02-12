@@ -336,16 +336,6 @@ std::string Dropbox::generateRelativePath(std::string path)
     return path.erase(0, folderPath.length());
 }
 
-int Dropbox::getTotalSent()
-{
-    return totalSent;
-}
-
-int Dropbox::getTotalReceived() const
-{
-    return totalReceived;
-}
-
 /**
  * 1. wysyła event NEW_FILE
  * 2. wysyła nazwę pliku
