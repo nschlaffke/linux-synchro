@@ -44,7 +44,7 @@ void ClientEventReporter::collectFilePaths(boost::filesystem::path path)
     }
     else
     {
-        throw runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
+        // throw runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + path.string());
     }
 }
 

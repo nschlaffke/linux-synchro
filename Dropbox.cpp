@@ -288,7 +288,8 @@ void Dropbox::deleteFile(std::string fileName)
                 throw DropboxException("Error deleting file: " + fileName);
             }
         }
-    } else
+    }
+    else
     {
         throw std::runtime_error(
                 "It is impossible to delete the file or directory, because the path does not exist. Path: " + fileName +

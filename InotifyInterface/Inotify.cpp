@@ -123,7 +123,7 @@ void Inotify::watchFile(boost::filesystem::path filePath)
     }
     else
     {
-        throw std::runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + filePath.string());
+        // throw std::runtime_error("It is impossible to watch the path, because the path does not exist. Path: " + filePath.string());
     }
 }
 
