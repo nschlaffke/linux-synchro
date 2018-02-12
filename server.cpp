@@ -24,6 +24,8 @@ int main(int argc, char *argv[])
         path = argv[3];
 
     }
+    std::ofstream out(path + "/../" + "log.txt");
+    std::cout.rdbuf(out.rdbuf());
     cout << "Running server\nIP: " << ip << " port: "
          << port << endl << "home folder: " << path << endl;
     DropboxServer dropboxServer(ip, port, path);

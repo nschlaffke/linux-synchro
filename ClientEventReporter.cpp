@@ -160,7 +160,8 @@ bool ClientEventReporter::checkIfCopied(Notification &notification)
     }
     else
     {
-        throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
+        return false;
+        //throw runtime_error("Determining modification time has failed. Path : " + fileInfo.path.string() + "\n");
     }
 
     auto it = ClientEventReporter::allFilesInfo.find(fileInfo);
@@ -174,7 +175,8 @@ bool ClientEventReporter::checkIfCopied(Notification &notification)
             }
             else
             {
-                throw runtime_error("Determining modification time has failed. Path : " + fi.path.string() + "\n");
+                return false;
+                //throw runtime_error("Determining modification time has failed. Path : " + fi.path.string() + "\n");
             }
 
             if(modificationTime2.tv_sec == modificationTime1.tv_sec &&

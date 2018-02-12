@@ -37,6 +37,8 @@ int main(int argc, const char *argv[])
        cout << e.what();
        return 0;
     }
+    std::ofstream out(path + "/../" + "log.txt");
+    std::cout.rdbuf(out.rdbuf());
     std::cout << "Client was run on: " << path << std::endl;
     dropboxClient.run();
 }
